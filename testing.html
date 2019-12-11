@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            padding: none;
+            margin: 0 auto;
+        }
+    </style>
+        <style>
+        #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+
+<head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.2.0/leaflet.css" />
+        <link rel="stylesheet" href="https://cdn.rawgit.com/socib/Leaflet.TimeDimension/master/dist/leaflet.timedimension.control.min.css" />
+        <link rel="stylesheet" href="css/gh-pages.css" />
+        <link rel="stylesheet" href="css/ropecss.css" />
+        <link rel="icon" href="mplslogo.png" />
+        <link rel="stylesheet" href="https://js.arcgis.com/4.13/esri/themes/light/main.css">
+        <script src="https://js.arcgis.com/4.13/"></script>
+        <title>Mpls Mobility</title>
+</head>
+
+<body bgcolor= "#f9f9f9" style="height: 100%">
+	<!--Header bar-->
+   <div class="ropeHeader">
+         <h2 class="ropeIcon"  style="content:url(mplslogo.png)"></h2>
+        <h2 class="ropeTitle"><a style="font-size: 16pt; text-decoration:none; color: inherit;" href="index.html">Testing</a></h2>
+        <p><a href="scooters.html" style=" text-decoration:none; color: #038bc2; font-family: Arial, Verdana;  font-size: 14px;float:right; margin-top: -40px; margin-right: 25px">Scooters</a></p>
+        <p><a style="text-decoration:none; float:right; font-weight: bold; font-family: Arial, Verdana;  font-size: 14px; color:black; margin-top: -40px; margin-right: 105px" href="meters.html">Meters</a></p>
+        <p><a style="text-decoration:none; float:right; font-family: Arial, Verdana;  font-size: 14px; color: #038bc2; margin-top: -40px; margin-right: 170px; " href="curb.html">Curbs</a></p>
+        <p><a style="text-decoration:none; float:right; font-family: Arial, Verdana;  font-size: 14px; color: #038bc2; margin-top: -40px; margin-right: 235px" href="tripplanner.html">Trip Planner</a></p>
+    </div>
+
+    
+    <div id="viewDiv">
+    </div>
+
+    <script>
+    require([
+      "esri/Map",
+      "esri/views/MapView",
+      "esri/widgets/BasemapToggle",
+      "esri/widgets/BasemapGallery",
+      "esri/layers/FeatureLayer",
+      "esri/widgets/Search",
+      "esri/layers/GraphicsLayer",
+      "esri/Graphic",
+      "esri/tasks/RouteTask",
+      "esri/tasks/support/RouteParameters",
+      "esri/tasks/support/FeatureSet",
+      "esri/core/urlUtils",
+      "esri/widgets/Directions"
+    ], function(Map, MapView, BasemapToggle, BasemapGallery, FeatureLayer, Search, GraphicsLayer, Graphic, RouteTask, RouteParameters, FeatureSet, urlUtils, Directions) {
+      
+      //ROUTING
+      var routeTask = new RouteTask({
+          url:
+            "https://utility.arcgis.com/usrsvcs/appservices/srsKxBIxJZB0pTZ0/rest/services/World/Route/NAServer/Route_World"
+        });
+
+      urlUtils.addProxyRule({
+       urlPrefix: "route.arcgis.com",
+       proxyUrl: "PHP/proxy.php"
+       });
+      // The stops and route result will be stored in this layer
+      var routeLayer = new GraphicsLayer();
+      
+      // Setup the route parameters
+      var routeParams = new RouteParameters({
+          stops: new FeatureSet(),
+          outSpatialReference: {
+            // autocasts as new SpatialReference()
+            wkid: 3857
+          }
+      });
+      // Define the symbology used to display the stops
+        var stopSymbol = {
+          type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
+          style: "cross",
+          size: 15,
+          outline: {
+            // autocasts as new SimpleLineSymbol()
+            width: 4
+          }
+        };
+
+        // Define the symbology used to display the route
+        var routeSymbol = {
+          type: "simple-line", // autocasts as SimpleLineSymbol()
+          color: [0, 0, 255, 0.5],
+          width: 5
+        };
+
+        function addStop(event) {
+          // Add a point at the location of the map click
+          var stop = new Graphic({
+            geometry: event.mapPoint,
+            symbol: stopSymbol
+          });
+          routeLayer.add(stop);
+
+          // Execute the route task if 2 or more stops are input
+          routeParams.stops.features.push(stop);
+          if (routeParams.stops.features.length >= 2) {
+            routeTask.solve(routeParams).then(showRoute);
+          }
+        }
+        // Adds the solved route to the map as a graphic
+        function showRoute(data) {
+          var routeResult = data.routeResults[0].route;
+          routeResult.symbol = routeSymbol;
+          routeLayer.add(routeResult);
+        }
+
+    var map = new Map({
+      basemap: "gray-vector",
+      layers: [routeLayer]
+    });
+
+    var view = new MapView({
+      container: "viewDiv",
+      map: map,
+      center: [-93.26670110950358,44.9780841101342], // longitude, latitude
+      zoom: 13
+    });
+    view.ui.components = [ "attribution" ];
+
+    view.on("click", addStop);
+
+    var searchWidget = new Search({
+      view: view
+    });
+
+    var directionsWidget = new Directions({
+      view: view
+    });
+    // Adds the Directions widget below other elements in
+    // the top right corner of the view
+    view.ui.add(directionsWidget, {
+      position: "bottom-right",
+      index: 2
+    });
+
+    view.ui.add(searchWidget, {
+      position: "bottom-left",
+      index: 2
+    });
+
+    var basemapGallery = new BasemapGallery({
+        view: view,
+        source: {
+          portal: {
+            url: "https://www.arcgis.com",
+            useVectorBasemaps: true  // Load vector tile basemaps
+          }
+        }
+      });
+    //view.ui.add(basemapGallery, "bottom-right");
+      
+     const defaultBike = {
+        type: "simple-line",
+        color: "red",
+        opacity: 0,
+        width: "0px",
+    };
+
+    const sharedLaneSymbol = {
+        type: "simple-line",
+        color: "#9B19F5",
+        width: "1px",
+        style: "solid"
+    };
+
+    const bikeLaneSymbol = {
+        type: "simple-line",
+        color: "#3CAF99",
+        width: "1px",
+        style: "solid"
+    };
+
+    const onStreetBikeLaneSymbol = {
+        type: "simple-line",
+        color: "#FF73DF",
+        width: "1px",
+        style: "solid"
+    };
+
+    const offStreetBikewaySymbol = {
+        type: "simple-line",
+        color: "#E60049",
+        width: "1px",
+        style: "solid"
+    };
+
+    const bikeBoulevardSymbol = {
+        type: "simple-line",
+        color: "#0BB4FF",
+        width: "1px",
+        style: "solid"
+    };
+
+     var bikewaysRenderer = {
+        type: "unique-value",
+        field: "TYPE_2",
+        defaultSymbol: defaultBike,
+        uniqueValueInfos: [
+          { value: "Shared Lane", symbol: sharedLaneSymbol},
+          { value: "Bike Lane", symbol: bikeLaneSymbol},
+          { value: "On-Street Protected Bike Lane", symbol: onStreetBikeLaneSymbol},
+          { value: "Off-Street Bikeway", symbol: offStreetBikewaySymbol},
+          { value: "Bike Boulevard", symbol: bikeBoulevardSymbol}
+          ]
+      };
+
+    var bikeways = new FeatureLayer({
+        url: "https://services.arcgis.com/afSMGVsC7QlRK1kZ/arcgis/rest/services/MPLS_Bike_Network/FeatureServer",
+        renderer: bikewaysRenderer,
+      });
+      map.add(bikeways);
+
+
+      var scooterCoralls = new FeatureLayer({
+        url: "https://services.arcgis.com/afSMGVsC7QlRK1kZ/arcgis/rest/services/ScooterCorrals/FeatureServer",
+        renderer: {
+          type: "simple",
+          symbol: {
+            type: "simple-marker",
+            color: "#14d7ff",
+            size: "8px"
+          }
+        },
+        popupTemplate: {  // Enable a popup
+          title: "Scooter Corall", // Show attribute value
+        }
+      });
+      map.add(scooterCoralls);
+
+      var NiceRideDocks = new FeatureLayer({
+        url: "https://services.arcgis.com/afSMGVsC7QlRK1kZ/arcgis/rest/services/NiceRideDocks/FeatureServer",
+        renderer: {
+          type: "simple",
+          symbol: {
+            type: "simple-marker",
+            color: "#00ff83",
+            size: "8px"
+          }
+        },
+        popupTemplate: {  // Enable a popup
+          title: "{NiceRideDock} Nice Ride Station", // Show attribute value
+        }
+      });
+      map.add(NiceRideDocks);
+
+
+
+
+  });
+
+   
+  //<iframe id="iframe" style="z-index: 1000; margin-top: 0px; position: absolute; margin-left: 25%"width='75%' height='100%' src='http://cityoflakes.maps.arcgis.com/apps/TimeAware/index.html?appid=70feae9c652244989bec5973f609329e' frameborder='0' scrolling='no'></iframe>
+  </script>
+
+</body>
+</html>
+
+
+
+
+</script>

@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/qgis2web.css"><link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/ropecss.css" />
+        <link rel="icon" href="mplslogo.png" />
+        <link rel="gbfs" type="application/json" href="https://gbfs.niceridemn.com/gbfs/gbfs.json" />
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css" />
+        <link rel="stylesheet" href="leaflet-routing-machine.css" />
+
+        <title>Mpls Mobility</title>
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: none;
+            margin: 0 auto;
+        }
+        </style>
+    </head>
+    <body bgcolor= "#f9f9f9" style="height: 100%">
+
+
+
+        <div id="map">
+            <script type="text/javascript" src="https://tableau.minneapolismn.gov/javascripts/api/viz_v1.js"></script>
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="data/PermitParkingOnly_1.js"></script>
+        <script src="data/PublicParking_2.js"></script>
+        <script src="data/PublicParkingPoints_3.js"></script>
+        <script src="data/MeteredParking_4.js"></script>
+        <script src="data/BlueLine_5.js"></script>
+        <script src="data/GreenLine_6.js"></script>
+        <script src="data/LightRailStations_7.js"></script>
+        <script src="data/NiceRideDocks_8.js"></script>
+        <script src="data/Scooter_Corrals_9.js"></script>
+        <script src="js/jQuery.js"></script>
+        <script src="data/MPLSBikeNetworkSimplified_1.js"></script>
+        <script src="data/MPLS_Centerline_2.js"></script>
+        <script src="data/NonCityRoads_1.js"></script>
+        <script src="leaflet-routing-machine.js"></script>
+        <script src="https://unpkg.com/esri-leaflet/dist/esri-leaflet.js"></script>
+        <link rel="stylesheet" href="https://unpkg.com/mapbox-gl/dist/mapbox-gl.css"/>
+        <script src="https://unpkg.com/mapbox-gl/dist/mapbox-gl.js"></script>
+        <!-- load the latest release from the cdn automatically -->
+        <script src="https://unpkg.com/esri-leaflet-vector/dist/esri-leaflet-vector-debug.js"></script>
+        <script src="https://unpkg.com/esri-leaflet-renderers@2.0.6"></script>
+        <script>
+
+        var map = L.map('map', {
+            continuousWorld: false,
+            worldCopyJump: false,
+            zoom: 15, 
+            zoomControl:false, maxZoom:18, minZoom:15,
+        }).fitBounds([[44.9702055643469,-93.2711638144286],[44.97904886189525,-93.24700938313433]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="http://leafletjs.com" title="A JS library for interactive maps">Leaflet</a>');
+
+        var bounds_group = new L.featureGroup([]);
+
+
+//LOCATE USER
+        map.locate({setView: true, maxZoom: 16});
+        function onLocationFound(e) {
+            var radius = e.accuracy;
+            L.circle(e.latlng, 10).addTo(map);
+        }
+        map.on('locationfound', onLocationFound);
+        function onLocationError(e) {
+            alert(e.message);
+            }
+        map.on('locationerror', onLocationError);
+//End locate user
+
+
+        
+
+//Zoom control
+        var zoomOptions = {
+            position: 'bottomleft',
+        };
+        var zoom = L.control.zoom(zoomOptions);
+        //zoom.addTo(map);
+        var lat = 44.9780841101342;
+        var lng = -93.26670110950358;
+        var zoom = 15;
+        L.Control.zoomHome = L.Control.extend({
+        options: {
+        position: 'bottomleft',
+        zoomInText: '+',
+        zoomInTitle: 'Zoom in',
+        zoomOutText: '-',
+        zoomOutTitle: 'Zoom out',
+        zoomHomeText: '<i class="fa fa-home" style="line-height:1.65;"></i>',
+        zoomHomeTitle: 'Zoom home'
+    },
+        onAdd: function (map) {
+        var controlName = 'gin-control-zoom',
+            container = L.DomUtil.create('div', controlName + ' leaflet-bar'),
+            options = this.options;
+        this._zoomInButton = this._createButton(options.zoomInText, options.zoomInTitle,
+        controlName + '-in', container, this._zoomIn);
+        this._zoomHomeButton = this._createButton(options.zoomHomeText, options.zoomHomeTitle,
+        controlName + '-home', container, this._zoomHome);
+        this._zoomOutButton = this._createButton(options.zoomOutText, options.zoomOutTitle,
+        controlName + '-out', container, this._zoomOut);
+        this._updateDisabled();
+        map.on('zoomend zoomlevelschange', this._updateDisabled, this);
+        return container;
+    },
+        onRemove: function (map) {
+        map.off('zoomend zoomlevelschange', this._updateDisabled, this);
+    },
+        _zoomIn: function (e) {
+        this._map.zoomIn(e.shiftKey ? 3 : 1);
+    },
+        _zoomOut: function (e) {
+        this._map.zoomOut(e.shiftKey ? 3 : 1);
+    },
+        _zoomHome: function (e) {
+        map.setView([lat, lng], zoom);
+        try
+        {
+            deleteSelection();
+        }
+        catch(e)
+        {
+            console.log("-");
+        }
+    },
+        _createButton: function (html, title, className, container, fn) {
+        var link = L.DomUtil.create('a', className, container);
+        link.innerHTML = html;
+        link.href = '#';
+        link.title = title;
+        L.DomEvent.on(link, 'mousedown dblclick', L.DomEvent.stopPropagation)
+            .on(link, 'click', L.DomEvent.stop)
+            .on(link, 'click', fn, this)
+            .on(link, 'click', this._refocusOnMap, this);
+        return link;
+    },
+        _updateDisabled: function () {
+        var map = this._map,
+            className = 'leaflet-disabled';
+        L.DomUtil.removeClass(this._zoomInButton, className);
+        L.DomUtil.removeClass(this._zoomOutButton, className);
+        if (map._zoom === map.getMinZoom()) {
+            L.DomUtil.addClass(this._zoomOutButton, className);
+        }
+        if (map._zoom === map.getMaxZoom()) {
+            L.DomUtil.addClass(this._zoomInButton, className);
+        }
+    }
+});
+        var zoomHome = new L.Control.zoomHome();
+        zoomHome.addTo(map);
+//End Zoom Control
+
+
+
+//Basemap
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+
+        var layer_CartoDbPositron_0 = L.tileLayer('http://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+            opacity: 1.0,
+            attribution: '',
+        });
+        layer_CartoDbPositron_0;
+        map.addLayer(layer_CartoDbPositron_0);
+//End basemap
+        
+
+
+//ESRI Stuff
+        //var layer = L.esri.Vector.basemap('Gray').addTo(map);
+        var temparray = [];
+        var nrdFINAL = new L.geoJson();
+        var nrd = L.esri.featureLayer({
+        url: "https://services.arcgis.com/afSMGVsC7QlRK1kZ/arcgis/rest/services/NiceRideDocks/FeatureServer/0"
+        }).addTo(map);
+
+        nrd.setStyle({
+          color: 'blue',
+          fillColor: 'white'
+        })
+
+        nrd.on('click', gimmeNiceRideDocks);
+
+        function gimmeNiceRideDocks(layer) {
+            console.log(layer);
+          }
+        
+
+
+
+
+
+
+
+
+
+
+
+        
+        function pop_PermitParkingOnly_1(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? Autolinker.link(String(feature.properties['OBJECTID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ID'] !== null ? Autolinker.link(String(feature.properties['ID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Shape_STAr'] !== null ? Autolinker.link(String(feature.properties['Shape_STAr'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Shape_STLe'] !== null ? Autolinker.link(String(feature.properties['Shape_STLe'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_PermitParkingOnly_1_0() {
+            return {
+                pane: 'pane_PermitParkingOnly_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(239,84,51,1.0)',
+            }
+        }
+        map.createPane('pane_PermitParkingOnly_1');
+        map.getPane('pane_PermitParkingOnly_1').style.zIndex = 401;
+        map.getPane('pane_PermitParkingOnly_1').style['mix-blend-mode'] = 'normal';
+        var layer_PermitParkingOnly_1 = new L.geoJson(json_PermitParkingOnly_1, {
+            attribution: '',
+            pane: 'pane_PermitParkingOnly_1',
+            onEachFeature: pop_PermitParkingOnly_1,
+            style: style_PermitParkingOnly_1_0,
+        });
+        bounds_group.addLayer(layer_PermitParkingOnly_1);
+        map.addLayer(layer_PermitParkingOnly_1);
+        function pop_PublicParking_2(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Name'] !== null ? Autolinker.link(String(feature.properties['Name'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['descriptio'] !== null ? Autolinker.link(String(feature.properties['descriptio'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['timestamp'] !== null ? Autolinker.link(String(feature.properties['timestamp'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['begin'] !== null ? Autolinker.link(String(feature.properties['begin'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['end'] !== null ? Autolinker.link(String(feature.properties['end'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['altitudeMo'] !== null ? Autolinker.link(String(feature.properties['altitudeMo'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['tessellate'] !== null ? Autolinker.link(String(feature.properties['tessellate'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['extrude'] !== null ? Autolinker.link(String(feature.properties['extrude'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['visibility'] !== null ? Autolinker.link(String(feature.properties['visibility'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['drawOrder'] !== null ? Autolinker.link(String(feature.properties['drawOrder'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['icon'] !== null ? Autolinker.link(String(feature.properties['icon'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['snippet'] !== null ? Autolinker.link(String(feature.properties['snippet'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_PublicParking_2_0() {
+            return {
+                pane: 'pane_PublicParking_2',
+                opacity: 1,
+                color: 'rgba(44,148,138,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(162,224,217,1.0)',
+            }
+        }
+        map.createPane('pane_PublicParking_2');
+        map.getPane('pane_PublicParking_2').style.zIndex = 402;
+        map.getPane('pane_PublicParking_2').style['mix-blend-mode'] = 'normal';
+        var layer_PublicParking_2 = new L.geoJson(json_PublicParking_2, {
+            attribution: '',
+            pane: 'pane_PublicParking_2',
+            onEachFeature: pop_PublicParking_2,
+            style: style_PublicParking_2_0,
+        });
+        bounds_group.addLayer(layer_PublicParking_2);
+        map.addLayer(layer_PublicParking_2);
+        function pop_PublicParkingPoints_3(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['id'] !== null ? Autolinker.link(String(feature.properties['id'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_PublicParkingPoints_3_0() {
+            return {
+                pane: 'pane_PublicParkingPoints_3',
+        rotationAngle: 0.0,
+        rotationOrigin: 'center center',
+        icon: L.icon({
+            iconUrl: 'markers/p-button-svgrepo-com.svg',
+            iconSize: [9, 9]
+        }),
+            }
+        }
+        map.createPane('pane_PublicParkingPoints_3');
+        map.getPane('pane_PublicParkingPoints_3').style.zIndex = 403;
+        map.getPane('pane_PublicParkingPoints_3').style['mix-blend-mode'] = 'normal';
+        var layer_PublicParkingPoints_3 = new L.geoJson(json_PublicParkingPoints_3, {
+            attribution: '',
+            pane: 'pane_PublicParkingPoints_3',
+            onEachFeature: pop_PublicParkingPoints_3,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.marker(latlng, style_PublicParkingPoints_3_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_PublicParkingPoints_3);
+        map.addLayer(layer_PublicParkingPoints_3);
+        function pop_MeteredParking_4(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DESCRIPTIO'] !== null ? Autolinker.link(String(feature.properties['DESCRIPTIO'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['COMMENTS'] !== null ? Autolinker.link(String(feature.properties['COMMENTS'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['GlobalID_3'] !== null ? Autolinker.link(String(feature.properties['GlobalID_3'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DaysActive'] !== null ? Autolinker.link(String(feature.properties['DaysActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['HrsActive'] !== null ? Autolinker.link(String(feature.properties['HrsActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['LENGTHft'] !== null ? Autolinker.link(String(feature.properties['LENGTHft'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['layer'] !== null ? Autolinker.link(String(feature.properties['layer'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_MeteredParking_4_0() {
+            return {
+                pane: 'pane_MeteredParking_4',
+                opacity: 1,
+                color: 'rgba(53,175,163,1.0)',
+                dashArray: '',
+                lineCap: 'round',
+                lineJoin: 'bevel',
+                weight: 3.5,
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_MeteredParking_4');
+        map.getPane('pane_MeteredParking_4').style.zIndex = 404;
+        map.getPane('pane_MeteredParking_4').style['mix-blend-mode'] = 'normal';
+        var layer_MeteredParking_4 = new L.geoJson(json_MeteredParking_4, {
+            attribution: '',
+            pane: 'pane_MeteredParking_4',
+            onEachFeature: pop_MeteredParking_4,
+            style: style_MeteredParking_4_0,
+        });
+        bounds_group.addLayer(layer_MeteredParking_4);
+        map.addLayer(layer_MeteredParking_4);
+        function pop_BlueLine_5(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['id'] !== null ? Autolinker.link(String(feature.properties['id'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['layer'] !== null ? Autolinker.link(String(feature.properties['layer'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['path'] !== null ? Autolinker.link(String(feature.properties['path'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_BlueLine_5_0() {
+            return {
+                pane: 'pane_BlueLine_5',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'round',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,83,237,1.0)',
+            }
+        }
+        map.createPane('pane_BlueLine_5');
+        map.getPane('pane_BlueLine_5').style.zIndex = 405;
+        map.getPane('pane_BlueLine_5').style['mix-blend-mode'] = 'normal';
+        var layer_BlueLine_5 = new L.geoJson(json_BlueLine_5, {
+            attribution: '',
+            pane: 'pane_BlueLine_5',
+            onEachFeature: pop_BlueLine_5,
+            style: style_BlueLine_5_0,
+        });
+        bounds_group.addLayer(layer_BlueLine_5);
+        map.addLayer(layer_BlueLine_5);
+        function pop_GreenLine_6(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['id'] !== null ? Autolinker.link(String(feature.properties['id'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_GreenLine_6_0() {
+            return {
+                pane: 'pane_GreenLine_6',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,210,68,1.0)',
+            }
+        }
+        map.createPane('pane_GreenLine_6');
+        map.getPane('pane_GreenLine_6').style.zIndex = 406;
+        map.getPane('pane_GreenLine_6').style['mix-blend-mode'] = 'normal';
+        var layer_GreenLine_6 = new L.geoJson(json_GreenLine_6, {
+            attribution: '',
+            pane: 'pane_GreenLine_6',
+            onEachFeature: pop_GreenLine_6,
+            style: style_GreenLine_6_0,
+        });
+        bounds_group.addLayer(layer_GreenLine_6);
+        map.addLayer(layer_GreenLine_6);
+        function pop_LightRailStations_7(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Station'] !== null ? Autolinker.link(String(feature.properties['Station'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['X'] !== null ? Autolinker.link(String(feature.properties['X'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Y'] !== null ? Autolinker.link(String(feature.properties['Y'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Name'] !== null ? Autolinker.link(String(feature.properties['Name'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Type'] !== null ? Autolinker.link(String(feature.properties['Type'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Transitway'] !== null ? Autolinker.link(String(feature.properties['Transitway'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['StationID'] !== null ? Autolinker.link(String(feature.properties['StationID'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_LightRailStations_7_0() {
+            return {
+                pane: 'pane_LightRailStations_7',
+        rotationAngle: 0.0,
+        rotationOrigin: 'center center',
+        icon: L.icon({
+            iconUrl: 'markers/rail-light-11.svg',
+            iconSize: [19.0, 19.0]
+        }),
+            }
+        }
+        map.createPane('pane_LightRailStations_7');
+        map.getPane('pane_LightRailStations_7').style.zIndex = 407;
+        map.getPane('pane_LightRailStations_7').style['mix-blend-mode'] = 'normal';
+        var layer_LightRailStations_7 = new L.geoJson(json_LightRailStations_7, {
+            attribution: '',
+            pane: 'pane_LightRailStations_7',
+            onEachFeature: pop_LightRailStations_7,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.marker(latlng, style_LightRailStations_7_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_LightRailStations_7);
+        map.addLayer(layer_LightRailStations_7);
+        function pop_NiceRideDocks_8(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['NiceRideDo'] !== null ? Autolinker.link(String(feature.properties['NiceRideDo']) + " NiceRide Dock") : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_NiceRideDocks_8_0() {
+            return {
+                pane: 'pane_NiceRideDocks_8',
+        rotationAngle: 0.0,
+        rotationOrigin: 'center center',
+        icon: L.icon({
+            iconUrl: 'legend/NiceRideIcon.png',
+            iconSize: [20, 24]
+        }),
+            }
+        }
+        map.createPane('pane_NiceRideDocks_8');
+        map.getPane('pane_NiceRideDocks_8').style.zIndex = 408;
+        map.getPane('pane_NiceRideDocks_8').style['mix-blend-mode'] = 'normal';
+        var layer_NiceRideDocks_8 = new L.geoJson(json_NiceRideDocks_8, {
+            attribution: '',
+            pane: 'pane_NiceRideDocks_8',
+            onEachFeature: pop_NiceRideDocks_8,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.marker(latlng, style_NiceRideDocks_8_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_NiceRideDocks_8);
+        map.addLayer(layer_NiceRideDocks_8);
+        function pop_Scooter_Corrals_9(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + "Scooter Corral"  + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_Scooter_Corrals_9_0() {
+            return {
+                pane: 'pane_Scooter_Corrals_9',
+        rotationAngle: 0.0,
+        rotationOrigin: 'center center',
+        icon: L.icon({
+            iconUrl: 'legend/ScooterIcon.png',
+            iconSize: [20, 24]
+        }),
+            }
+        }
+        map.createPane('pane_Scooter_Corrals_9');
+        map.getPane('pane_Scooter_Corrals_9').style.zIndex = 409;
+        map.getPane('pane_Scooter_Corrals_9').style['mix-blend-mode'] = 'normal';
+        var layer_Scooter_Corrals_9 = new L.geoJson(json_Scooter_Corrals_9, {
+            attribution: '',
+            pane: 'pane_Scooter_Corrals_9',
+            onEachFeature: pop_Scooter_Corrals_9,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.marker(latlng, style_Scooter_Corrals_9_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_Scooter_Corrals_9);
+        map.addLayer(layer_Scooter_Corrals_9);
+
+         function pop_MPLSBikeNetworkSimplified_1(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TYPE_2'] !== null ? Autolinker.link(String(feature.properties['TYPE_2'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+
+        function style_MPLSBikeNetworkSimplified_1_0(feature) {
+            switch(String(feature.properties['TYPE_2'])) {
+                case 'Bike Boulevard':
+                    return {
+                pane: 'pane_MPLSBikeNetworkSimplified_1',
+                opacity: 1,
+                color: 'rgba(149,132,241,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 2.0,
+                fillOpacity: 0,
+            }
+                    break;
+                case 'Bike Lane':
+                    return {
+                pane: 'pane_MPLSBikeNetworkSimplified_1',
+                opacity: 1,
+                color: 'rgba(149,132,241,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 2.0,
+                fillOpacity: 0,
+            }
+                    break;
+                case 'Off-Street Bikeway':
+                    return {
+                pane: 'pane_MPLSBikeNetworkSimplified_1',
+                opacity: 1,
+                color: 'rgba(149,132,241,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 2.0,
+                fillOpacity: 0,
+            }
+                    break;
+                case 'On-Street Protected Bike Lane':
+                    return {
+                pane: 'pane_MPLSBikeNetworkSimplified_1',
+                opacity: 1,
+                color: 'rgba(149,132,241,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 2.0,
+                fillOpacity: 0,
+            }
+                    break;
+                case 'Shared Lane':
+                    return {
+                pane: 'pane_MPLSBikeNetworkSimplified_1',
+                opacity: 1,
+                color: 'rgba(149,132,241,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 2.0,
+                fillOpacity: 0,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_MPLSBikeNetworkSimplified_1');
+        map.getPane('pane_MPLSBikeNetworkSimplified_1').style.zIndex = 401;
+        map.getPane('pane_MPLSBikeNetworkSimplified_1').style['mix-blend-mode'] = 'normal';
+        var layer_MPLSBikeNetworkSimplified_1 = new L.geoJson(json_MPLSBikeNetworkSimplified_1, {
+            attribution: '',
+            pane: 'pane_MPLSBikeNetworkSimplified_1',
+            onEachFeature: pop_MPLSBikeNetworkSimplified_1,
+            style: style_MPLSBikeNetworkSimplified_1_0,
+        });
+        bounds_group.addLayer(layer_MPLSBikeNetworkSimplified_1);
+        map.addLayer(layer_MPLSBikeNetworkSimplified_1);
+
+        function pop_MPLS_Centerline_2(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + "GBSID=" + (feature.properties['GBSID'] !== null ? Autolinker.link(String(feature.properties['GBSID'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_MPLS_Centerline_2_0() {
+            return {
+                pane: 'pane_MPLS_Centerline_2',
+                opacity: 0,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_MPLS_Centerline_2');
+        map.getPane('pane_MPLS_Centerline_2').style.zIndex = 402;
+        map.getPane('pane_MPLS_Centerline_2').style['mix-blend-mode'] = 'normal';
+        var layer_MPLS_Centerline_2 = new L.geoJson(json_MPLS_Centerline_2, {
+            attribution: '',
+            pane: 'pane_MPLS_Centerline_2',
+            onEachFeature: pop_MPLS_Centerline_2,
+            style: style_MPLS_Centerline_2_0,
+        });
+        bounds_group.addLayer(layer_MPLS_Centerline_2);
+        map.addLayer(layer_MPLS_Centerline_2);
+
+
+        var baseMaps = {};
+        L.control.layers(baseMaps,{'Bike Lanes':layer_MPLSBikeNetworkSimplified_1, 'NiceRide Docks':layer_NiceRideDocks_8, 'Scooter Corrals': layer_Scooter_Corrals_9, 'Metered Parking':layer_MeteredParking_4, 'Permit Parking':layer_PermitParkingOnly_1}, {position: 'bottomright', collapsed:false}).addTo(map);
+
+        setBounds();
+
+
+
+    //style data from API
+    function style_centerlines() {
+            return {
+                //pane: 'pane_MeteredParking_4',
+                opacity: .1,
+                color: "black",
+                dashArray: '',
+                lineCap: 'round',
+                lineJoin: 'bevel',
+                weight: 3.5,
+                fillOpacity: 0,
+            }
+        }
+
+    function style_scooters() {
+            return {
+                //pane: 'pane_Scooter_Corrals_9',
+                rotationAngle: 0.0,
+                rotationOrigin: 'center center',
+                icon: L.icon({
+                iconUrl: 'legend/ScooterIcon.png',
+                iconSize: [30, 34] }),
+            }
+        }
+
+    //fetch data from API
+    async function getScooters() {
+        const response = await fetch("https://opendata.arcgis.com/datasets/47af2f88d31f45ccaaf945dbcc8f9665_0.geojson");
+        const data = await response.json();
+        parseScooterData(data);
+    }
+    
+    //getScooters();
+
+
+
+    function parseScooterData(feature){
+        var scooters = feature;
+        var scooterArray = Object.values(scooters); //casts scooter object as array of scooter objects
+        for(item of scooterArray){
+            console.log(item);
+            L.marker([44.9757, -93.2607]).addTo(map);
+        }
+
+        //TO-DO
+        //1. Extract only the scooters available right now. Look through property PollTime.
+        //2. Create layer containing the available scooters...could look something like this:
+            //var scooterLayer = new L.geoJSON(scooters, {
+             //   style: style_scooters,
+            //});
+            //map.addLayer(scooterLayer);
+        //3. Plot scooter locations using property ClosestCenterlineID
+            //Perhaps create an array of all CenterlineIDs with corresponding X/Y values to easily assign scooter location.
+    }
+
+
+
+    async function getCenterlines() {
+        const response = await fetch("https://opendata.arcgis.com/datasets/e68d01d782c04d88876bbd51e1c40702_0.geojson");
+        const data = await response.json();
+        parseCenterlines(data);
+    }
+   //getCenterlines();
+
+   function parseCenterlines(feature){
+        const centerlines = feature;
+        console.log(centerlines);
+        var centerlineLayer = new L.geoJSON(centerlines, {
+            style: style_centerlines,
+        });
+        console.log(centerlineLayer);
+        map.addLayer(centerlineLayer);
+   }
+
+
+
+       // {"last_updated":1574429564,"ttl":10,"data":{"en":{"feeds":[{"name":"station_information","url":"https://gbfs.niceridemn.com/gbfs/en/station_information.json"},{"name":"station_status","url":"https://gbfs.niceridemn.com/gbfs/en/station_status.json"},{"name":"system_alerts","url":"https://gbfs.niceridemn.com/gbfs/en/system_alerts.json"},{"name":"system_information","url":"https://gbfs.niceridemn.com/gbfs/en/system_information.json"},{"name":"system_calendar","url":"https://gbfs.niceridemn.com/gbfs/en/system_calendar.json"},{"name":"system_regions","url":"https://gbfs.niceridemn.com/gbfs/en/system_regions.json"}]},"es":{"feeds":[{"name":"station_information","url":"https://gbfs.niceridemn.com/gbfs/es/station_information.json"},{"name":"station_status","url":"https://gbfs.niceridemn.com/gbfs/es/station_status.json"},{"name":"system_alerts","url":"https://gbfs.niceridemn.com/gbfs/es/system_alerts.json"},{"name":"system_information","url":"https://gbfs.niceridemn.com/gbfs/es/system_information.json"},{"name":"system_calendar","url":"https://gbfs.niceridemn.com/gbfs/es/system_calendar.json"},{"name":"system_regions","url":"https://gbfs.niceridemn.com/gbfs/es/system_regions.json"}]},"fr":{"feeds":[{"name":"station_information","url":"https://gbfs.niceridemn.com/gbfs/fr/station_information.json"},{"name":"station_status","url":"https://gbfs.niceridemn.com/gbfs/fr/station_status.json"},{"name":"system_alerts","url":"https://gbfs.niceridemn.com/gbfs/fr/system_alerts.json"},{"name":"system_information","url":"https://gbfs.niceridemn.com/gbfs/fr/system_information.json"},{"name":"system_calendar","url":"https://gbfs.niceridemn.com/gbfs/fr/system_calendar.json"},{"name":"system_regions","url":"https://gbfs.niceridemn.com/gbfs/fr/system_regions.json"}]}}}
+
+
+        </script>
+    </body>
+</html>
