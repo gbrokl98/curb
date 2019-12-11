@@ -1,0 +1,2579 @@
+<!doctype html>
+<html lang="en">
+         
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            padding: none;
+            margin: 0 auto;
+        }
+
+        input[type=checkbox] {
+        transform: scale(1);
+        }
+    </style>
+
+<head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.2.0/leaflet.css" />
+        <link rel="stylesheet" href="https://cdn.rawgit.com/socib/Leaflet.TimeDimension/master/dist/leaflet.timedimension.control.min.css" />
+        <link rel="stylesheet" href="css/gh-pages.css" />
+        <link rel="stylesheet" href="css/ropecss.css" />
+        <link rel="icon" href="mplslogo.png" />
+        <title>Mpls Mobility</title>
+</head>
+
+<!-- Body -->
+<body bgcolor= "#e8e8e8" style="height: 100%">
+
+
+
+<!-- Tool Selection Buttons -->
+    <div style="margin-left: 25%; position: absolute; margin-top: 14px; z-index: 1002; text-align: center">
+        <button class="toolButton" id="disable-button" onclick="pan()"><img src="pan.png" height="10" width="10"> Pan</button>
+        <button class="toolButton" id="enable-button" onclick="select()"><img src="draw.png" height="10" width="10"> Draw Select</button>
+        <button class="toolButton" id="block-button" onclick="blockSelect()"><img src="blockselect.png" height="10" width="10"> Block Select</button>
+        <button class="toolButton" id="get-button-features" onclick="analyze()"><img src="analyze.png" height="10" width="10"> Analyze</button>
+        <button class="toolButton" id="delete-button-all" onclick="deleteSelection()"><img src="delete.png" height="10" width="10"> Delete</button>
+    </div>
+
+<!-- Toggle View Button -->
+    <div style="margin-left: 90%; position: absolute; margin-top: 10px; z-index: 1002; text-align: center">
+        <!--<button style="width: 120px; height: 30px; color: black; font-family: Arial, Verdana; text-align:center;font-weight: bold;" id="meter-view-button" class="btn1">Meter View</button>-->
+    </div>
+
+<!-- Analysis table -->
+         <table id = "table" bgcolor="white" style="font-size: 12px; font-family: Arial, Helvetica; border: collapse; border: 0px solid lightgrey; border-spacing: 0px; width: 25%; height: 485px; position: absolute; z-index: 1; left:0px; margin-top: 140px; z-index: 900" align= "left">
+                <tbody>
+                <tr style="background-color:white; width: 160px;">
+                    <td style="border-bottom: 1px solid lightgrey; padding: 6px; ">Selection Analysis</td>
+                    <td style="border-bottom: 1px solid lightgrey; width: 75px;text-align: center ">Length</td>
+                    <td style="border-bottom: 1px solid lightgrey; width: 75px;text-align: center">Percent</td>
+                </tr>
+                
+                <tr>
+                    <td style="width: 160px; border-right: 1px solid lightgrey; background-color:white; padding:6px">
+                        <img src="legend/Meter_Parking_10.png" alt="Meter_Parking_10" height="15" width="20"> Metered Parking
+                        <input checked id="meterCheckbox" type="checkbox" onchange= "toggleMeter()" style="float: right"/></td>
+                    </td>
+
+                    <td style="border-right: 1px solid lightgrey; text-align:center; border-bottom: 1px solid lightgrey; padding: none" id="meter"></td>
+                    <td style="text-align:center; border-bottom: 1px solid lightgrey" id="meter2"></td>
+                </tr>
+                <tr>
+                    <td style="width: 160px; border-right: 1px solid lightgrey; background-color:white;padding: 6px; ">  <img src="legend/Free_Parking_9.png" alt="Free_Parking_9" height="15" width="20"> Free Parking<input id="freeCheckbox" checked type="checkbox" onchange= "toggleFree()" style="float: right"/></td>
+                    <td style="border-right: 1px solid lightgrey; text-align:center; border-bottom: 1px solid lightgrey; padding: none" id="fp"></td>
+                    <td style="text-align:center; border-bottom: 1px solid lightgrey" id="fp2"></td>
+                </tr>
+                <tr>
+                    <td style="width: 160px; border-right: 1px solid lightgrey; background-color:white; padding: 6px; "><img src="legend/No_Parking_8.png" alt="No_Parking_8" height="15" width="20"> No Parking<input id="npCheckbox" checked type="checkbox" onchange= "toggleNp()" style="float: right"/></td>
+                    <td style="border-right: 1px solid lightgrey;text-align:center; border-bottom: 1px solid lightgrey" id="np"></td>
+                    <td style="text-align:center; border-bottom: 1px solid lightgrey" id="np2"></td>
+                </tr>
+               <tr>
+                    <td style="width: 160px; border-right: 1px solid lightgrey;background-color:white; padding: 6px; color:black"><img src="legend/No_Stopping_7.png" alt="No_Stopping_7" height="15" width="20"> No Stopping<input id="nsCheckbox"checked type="checkbox" onchange= "toggleNs()" style="float: right"/></td>
+                    <td style="border-right: 1px solid lightgrey;text-align:center; border-bottom: 1px solid lightgrey" id="ns"></td>
+                    <td style="text-align:center; border-bottom: 1px solid lightgrey" id="ns2"></td>
+                </tr>
+                   <tr>
+                    <td style="width: 160px; border-right: 1px solid lightgrey;background-color:white; padding: 6px; "><img src="legend/Bus_Zone_6.png" alt="Bus_Zone_6" height="15" width="20"> Bus Only<input id="busCheckbox" checked type="checkbox" onchange= "toggleBus()" style="float: right"/></td>
+                    <td style="border-right: 1px solid lightgrey;text-align:center; border-bottom: 1px solid lightgrey" id="bz"></td>
+                    <td style="text-align:center; border-bottom: 1px solid lightgrey" id="bz2"></td>
+                </tr>
+                <tr>
+                    <td style="width: 160px; border-right: 1px solid lightgrey;background-color:white; padding: 6px; "> <img src="legend/Passenger_Loading_Zone_5.png" alt="Passenger_Loading_Zone_5" height="15" width="20"> Passenger Loading<input id="plzCheckbox" checked onchange= "togglePlz()" type="checkbox" style="float: right"/></td>
+                    <td style="border-right: 1px solid lightgrey;text-align:center; border-bottom: 1px solid lightgrey" id="plz"></td>
+                    <td style="text-align:center; border-bottom: 1px solid lightgrey" id="plz2"></td>
+                </tr>
+                <tr>
+                    <td style="width: 160px; border-right: 1px solid lightgrey;background-color:white; padding: 6px; "> <img src="legend/Commercial_Loading_Zone_4.png" alt="Commercial_Loading_Zone_4" height="15" width="20"> Commercial Loading<input id="clzCheckbox" checked onchange= "toggleClz()" type="checkbox" style="float: right"/></td>
+                    <td style="border-right: 1px solid lightgrey;text-align:center; border-bottom: 1px solid lightgrey" id="clz"></td>
+                    <td style="text-align:center; border-bottom: 1px solid lightgrey" id="clz2"></td>
+                </tr>
+                <tr>
+                    <td style="width: 160px; border-right: 1px solid lightgrey;background-color:white; padding: 6px; "><img src="legend/Construction_Zone_3.png" alt="Construction_Zone_3" height="15" width="20"> Construction<input id="conCheckbox" checked type="checkbox" onchange= "toggleCon()" style="float: right"/></td>
+                    <td style="border-right: 1px solid lightgrey;text-align:center; border-bottom: 1px solid lightgrey" id="cz"></td>
+                    <td style="text-align:center; border-bottom: 1px solid lightgrey" id="cz2"></td>
+                </tr>
+                <tr>
+                    <td style="width: 160px; border-right: 1px solid lightgrey;background-color:white; padding: 6px;color:black"><img src="legend/Disability_Zone_2.png" alt="Disability_Zone_2" height="15" width="20"> Disability<input id="disCheckbox" checked type="checkbox" onchange= "toggleDis()" style="float: right"/></td>
+                    <td style="border-right: 1px solid lightgrey;text-align:center; border-bottom: 1px solid lightgrey;" id="dz"></td>
+                    <td style="text-align:center; border-bottom: 1px solid lightgrey;" id="dz2"></td>
+                </tr>
+                <tr>
+                    <td style="width: 160px; border-right: 1px solid lightgrey;background-color:white; border-bottom: 1px solid lightgrey;padding: 6px; "><img src="legend/Other_1.png" alt="Other_1" height="15" width="20"> Other<input id= "otherCheckbox" checked onchange="toggleOther()" type="checkbox" style="float: right"/></td>
+                    <td style="border-right: 1px solid lightgrey;text-align:center; border-bottom: 1px solid lightgrey" id="oth"></td>
+                    <td style="text-align:center; border-bottom: 1px solid lightgrey" id="oth2"></td>
+                </tr>
+                <tr style= "background-color:white">
+                    <td style="border-right: 1px solid lightgrey; width: 160px; padding: 6px">Total</td>
+                    <td style="border-right: 1px solid lightgrey; text-align:center" id="all"></td>
+                    <td style="text-align:center" id="all2"></td>
+                </tr>
+                </tbody>
+        </table>
+
+<!-- Meter analysis table -->
+         <table id = "meterTable" bgcolor="white" style="font-size: 14px; font-family: Arial, Helvetica; border: collapse; border: 0px solid lightgrey; border-spacing: 0px; width: 25%; height: 50px; position: absolute; z-index: 1; left:0px; margin-top: 140px; z-index: 900; visibility: hidden" align= "left">
+                <tbody>
+                <tr style="background-color:white; width: 160px;">
+                    <td style="border-bottom: 1px solid lightgrey; padding: 6px; ">Selection Analysis</td>
+                    <td style="border-bottom: 1px solid lightgrey; text-align: center ">Count</td>
+                    <td style="border-bottom: 1px solid lightgrey; text-align: center">Percent</td>
+                </tr>
+                
+                <tr>
+                    <td style="width: 160px; border-right: 1px solid lightgrey; background-color:white;padding: 2px"> Meters </td>
+                    <td style="border-right: 1px solid lightgrey; text-align:right; border-bottom: 1px solid lightgrey" id="parkingMeterCount"></td>
+                    <td style="text-align:right; border-bottom: 1px solid lightgrey" id="parkingMeterPercent"></td>
+                </tr>
+                </tbody>
+        </table>
+
+<!--Leftside Panel Rectangle-->
+    <div class="sidePanel"></div>
+
+      <!-- Map style -->
+    <div id="map"  style="width: 74.5%; height: 100%; float: left; margin-left: 25%; padding: none; z-index: 1000; border-left: 1px solid lightgrey">  </div>
+
+
+<!--Header bar-->
+    <div class="ropeHeader">
+        <h2 class="ropeIcon"  style="content:url(mplslogo.png)"></h2>
+        <h2 class="ropeTitle"><a style="font-size: 16pt; text-decoration:none; color: inherit;" href="index.html">Curbside Minneapolis</a></h2>
+        <p><a href="scooters.html" style=" text-decoration:none; color: #038bc2; font-family: Arial, Verdana;  font-size: 14px;float:right; margin-top: -40px; margin-right: 25px">Scooters</a></p>
+        <p><a style="text-decoration:none; float:right; font-family: Arial, Verdana;  font-size: 14px; color: #038bc2; margin-top: -40px; margin-right: 105px" href="meters.html">Meters</a></p>
+        <p><a style="text-decoration:none; float:right; font-family: Arial, Verdana;  font-size: 14px; color: black; margin-top: -40px; margin-right: 170px; font-weight: bold" href="curb.html">Curbs</a></p>
+        <p><a style="text-decoration:none; float:right; font-family: Arial, Verdana;  font-size: 14px; color: #038bc2; margin-top: -40px; margin-right: 235px" href="tripplanner.html">Trip Planner</a></p>
+    </div>
+
+<!--Pie Chart Styling
+    <div id = "analysisarea" style="z-index: 900">
+        <div id="chartContainer" style="height: 25%; width: 25%; position: absolute; margin-top: 471px; margin-left:1px; z-index: 901"></div>
+    </div>
+    -->
+
+<!-- Dropdown day toggle button -->
+    <div class="dropdown" style= "z-index: 901; left: 1%; top: 55px; position: absolute; width: 90%">
+      <button id= "dropdownDayButton" onclick="DayDropdown()" class="dropbtn" style= "font-family: Arial, Verdana; text-align:left; font-weight: bold">Day</button>
+      <div id="myDropdown" class="dropdown-content">
+        <p id="AllDays" class="dropdownDays" onclick= "AllDaysFilter()">All Days</p>
+        <p id="Mon" class="dropdownDays" onclick= "MonFilter()">Monday</p>
+        <p id="Tue" class="dropdownDays" onclick= "TueFilter()">Tuesday</p>
+        <p id="Wed" class="dropdownDays" onclick= "WedFilter()">Wednesday</p>
+        <p id="Thu" class="dropdownDays" onclick= "ThuFilter()">Thursday</p>
+        <p id="Fri" class="dropdownDays" onclick= "FriFilter()">Friday</p>
+        <p id="Sat" class="dropdownDays" onclick= "SatFilter()">Saturday</p>
+        <p id="Sun" class="dropdownDays" onclick= "SunFilter()">Sunday</p>
+        
+      </div>
+    </div>
+
+    <div class="dropdown" style= "z-index: 900; left: 1%; top: 95px; position: absolute; width: 90%">
+      <button id= "dropdownTimeButton" onclick="TimeDropdown()" class="dropbtn" style= "font-family: Arial, Verdana; text-align:left; font-weight: bold">Hour</button>
+      <div id="myDropdown2" class="dropdown-content">
+        <p id="AllHours" class="dropdownDays" onclick= "AllHoursFilter()">All Hours</p>
+        <p id="7AM" class="dropdownDays" onclick= "Filter7AM()">7:00 AM</p>
+        <p id="8AM" class="dropdownDays" onclick= "Filter8AM()">8:00 AM</p>
+        <p id="9AM" class="dropdownDays" onclick= "Filter9AM()">9:00 AM</p>
+        <p id="10AM" class="dropdownDays" onclick= "Filter10AM()">10:00 AM</p>
+        <p id="11AM" class="dropdownDays" onclick= "Filter11AM()">11:00 AM</p>
+        <p id="12PM" class="dropdownDays" onclick= "Filter12PM()">12:00 PM</p>
+        <p id="1PM" class="dropdownDays" onclick= "Filter1PM()">1:00 PM</p>
+        <p id="2PM" class="dropdownDays" onclick= "Filter2PM()">2:00 PM</p>
+        <p id="3PM" class="dropdownDays" onclick= "Filter3PM()">3:00 PM</p>
+        <p id="4PM" class="dropdownDays" onclick= "Filter4PM()">4:00 PM</p>
+        <p id="5PM" class="dropdownDays" onclick= "Filter5PM()">5:00 PM</p>
+        <p id="6PM" class="dropdownDays" onclick= "Filter6PM()">6:00 PM</p>
+        <p id="7PM" class="dropdownDays" onclick= "Filter7PM()">7:00 PM</p>
+        <p id="8PM" class="dropdownDays" onclick= "Filter8PM()">8:00 PM</p>
+        <p id="9PM" class="dropdownDays" onclick= "Filter9PM()">9:00 PM</p>
+        <p id="10PM" class="dropdownDays" onclick= "Filter10PM()">10:00 PM</p>
+        <p id="11PM" class="dropdownDays" onclick= "Filter11PM()">11:00 PM</p>
+        <p id="12AM" class="dropdownDays" onclick= "Filter12AM()">12:00 AM</p>
+        <p id="1AM" class="dropdownDays" onclick= "Filter1AM()">1:00 AM</p>
+        <p id="2AM" class="dropdownDays" onclick= "Filter2AM()">2:00 AM</p>
+        <p id="3AM" class="dropdownDays" onclick= "Filter3AM()">3:00 AM</p>
+        <p id="4AM" class="dropdownDays" onclick= "Filter4AM()">4:00 AM</p>
+        <p id="5AM" class="dropdownDays" onclick= "Filter5AM()">5:00 AM</p>
+        <p id="6AM" class="dropdownDays" onclick= "Filter6AM()">6:00 AM</p>
+      </div>
+    </div>
+   
+
+</body>
+
+
+        <script type="text/javascript" src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+        <script src="js/jQuery.js"></script>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/proj4.js"></script>
+        <script src="js/proj4leaflet.js"></script>
+        <script src="data/Other_1.js"></script>
+        <script src="data/Disability_Zone_2.js"></script>
+        <script src="data/Construction_Zone_3.js"></script>
+        <script src="data/Commercial_Loading_Zone_4.js"></script>
+        <script src="data/Passenger_Loading_Zone_5.js"></script>
+        <script src="data/Bus_Zone_6.js"></script>
+        <script src="data/No_Stopping_7.js"></script>
+        <script src="data/No_Parking_8.js"></script>
+        <script src="data/Free_Parking_9.js"></script>
+        <script src="data/Meter_Parking_10.js"></script>
+        <script src="data/MeterLocations_11.js"></script>
+        <script src="data/Public_Parking_Ramps_1.js"></script>
+        <script src="data/Critical_Parking_Areas_2.js"></script>
+        <script src="./js/leaflet.SelectAreaFeature.js"></script>
+        <script src="js/catiline.js"></script>
+        <script src="js/shp.js"></script>
+        <script src="js/leaflet.shpfile.js"></script>
+        <script src="data/BlockAnalysis_1.js"></script>
+        <script src="data/NiceRideDocks_2.js"></script>
+        <script src="data/MeterLocations_3.js"></script>
+        <script src="data/Hydrants_4.js"></script>
+        <script src="data/TransitStops_5.js"></script>
+        <script src="data/NonCityRoads_1.js"></script>
+        <script>
+
+        var crs = new L.Proj.CRS('EPSG:3857', '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs', {
+            resolutions: [2800, 1400, 700, 350, 175, 84, 42, 21, 11.2, 5.6, 2.8, 1.4, 0.7, 0.35, 0.14, 0.07],
+        });
+
+        var map = L.map('map', {
+            //crs: crs,
+            continuousWorld: false,
+            worldCopyJump: false,
+            zoom: 15, 
+            zoomControl:false, maxZoom:18, minZoom:13,
+        }).fitBounds([[44.9740841101342,-93.27670110950358],[44.98197723119601,-93.25634644269473]]);
+        //map.scrollWheelZoom.disable();
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="http://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://www.linkedin.com/in/grant-brokl-a58b3b14a/" color: white> Grant Brokl 2019</a>');
+
+
+        var bounds_group = new L.featureGroup([]);
+
+        var zoomOptions = {
+            
+            position: 'bottomleft',
+        };
+        var zoom = L.control.zoom(zoomOptions);
+        //zoom.addTo(map);
+
+        var lat = 44.9780841101342;
+        var lng = -93.26670110950358;
+        var zoom = 15;
+
+        L.Control.zoomHome = L.Control.extend({
+        options: {
+        position: 'bottomleft',
+        zoomInText: '+',
+        zoomInTitle: 'Zoom in',
+        zoomOutText: '-',
+        zoomOutTitle: 'Zoom out',
+        zoomHomeText: '<i class="fa fa-home" style="line-height:1.65;"></i>',
+        zoomHomeTitle: 'Zoom home'
+    },
+        onAdd: function (map) {
+        var controlName = 'gin-control-zoom',
+            container = L.DomUtil.create('div', controlName + ' leaflet-bar'),
+            options = this.options;
+
+        this._zoomInButton = this._createButton(options.zoomInText, options.zoomInTitle,
+        controlName + '-in', container, this._zoomIn);
+        this._zoomHomeButton = this._createButton(options.zoomHomeText, options.zoomHomeTitle,
+        controlName + '-home', container, this._zoomHome);
+        this._zoomOutButton = this._createButton(options.zoomOutText, options.zoomOutTitle,
+        controlName + '-out', container, this._zoomOut);
+
+        this._updateDisabled();
+        map.on('zoomend zoomlevelschange', this._updateDisabled, this);
+
+        return container;
+    },
+
+        onRemove: function (map) {
+        map.off('zoomend zoomlevelschange', this._updateDisabled, this);
+    },
+
+        _zoomIn: function (e) {
+        this._map.zoomIn(e.shiftKey ? 3 : 1);
+    },
+
+        _zoomOut: function (e) {
+        this._map.zoomOut(e.shiftKey ? 3 : 1);
+    },
+
+        _zoomHome: function (e) {
+        map.setView([lat, lng], zoom);
+        try
+        {
+            deleteSelection();
+        }
+        catch(e)
+        {
+            console.log("-");
+        }
+    },
+
+        _createButton: function (html, title, className, container, fn) {
+        var link = L.DomUtil.create('a', className, container);
+        link.innerHTML = html;
+        link.href = '#';
+        link.title = title;
+
+        L.DomEvent.on(link, 'mousedown dblclick', L.DomEvent.stopPropagation)
+            .on(link, 'click', L.DomEvent.stop)
+            .on(link, 'click', fn, this)
+            .on(link, 'click', this._refocusOnMap, this);
+
+        return link;
+    },
+        _updateDisabled: function () {
+        var map = this._map,
+            className = 'leaflet-disabled';
+
+        L.DomUtil.removeClass(this._zoomInButton, className);
+        L.DomUtil.removeClass(this._zoomOutButton, className);
+
+        if (map._zoom === map.getMinZoom()) {
+            L.DomUtil.addClass(this._zoomOutButton, className);
+        }
+        if (map._zoom === map.getMaxZoom()) {
+            L.DomUtil.addClass(this._zoomInButton, className);
+        }
+    }
+});
+        var zoomHome = new L.Control.zoomHome();
+        zoomHome.addTo(map);
+
+        function setBounds() {
+        }
+        var layer_CartoDbPositron_0 = L.tileLayer('http://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+            opacity: 1.0,
+            attribution: '',
+        });
+        layer_CartoDbPositron_0;
+
+
+        map.addLayer(layer_CartoDbPositron_0);
+        function pop_Other_1(feature, layer) {
+            var popupContent = 'Other <table>\
+                    <tr>\
+                        <td colspan="2">' + "Days Active: "+ (feature.properties['DaysActive'] !== null ? Autolinker.link(String(feature.properties['DaysActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Hours Active: "+ (feature.properties['HrsActive'] !== null ? Autolinker.link(String(feature.properties['HrsActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Length: "+ (feature.properties['LENGTHft'] !== null ? Autolinker.link(String(feature.properties['LENGTHft'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 100});
+        }
+
+        function style_Other_1_0() {
+            return {
+                pane: 'pane_Other_1',
+                opacity: 1,
+                color: 'rgba(248,168,188,1.0)',
+                dashArray: '',
+                lineCap: 'round',
+                lineJoin: 'round',
+                weight: 2.5,
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_Other_1');
+        map.getPane('pane_Other_1').style.zIndex = 401;
+        map.getPane('pane_Other_1').style['mix-blend-mode'] = 'normal';
+        var layer_Other_1 = new L.geoJson(json_Other_1, {
+            attribution: '',
+            pane: 'pane_Other_1',
+            onEachFeature: pop_Other_1,
+            style: style_Other_1_0,
+        });
+        bounds_group.addLayer(layer_Other_1);
+        map.addLayer(layer_Other_1);
+        function pop_Disability_Zone_2(feature, layer) {
+            var popupContent = 'Disability Zone <table>\
+                    <tr>\
+                        <td colspan="2">' + "Type: "+ (feature.properties['TransferOr'] !== null ? Autolinker.link(String(feature.properties['TransferOr'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Hours Active: "+ (feature.properties['HrsActive'] !== null ? Autolinker.link(String(feature.properties['HrsActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Days Active: "+ (feature.properties['DaysActive'] !== null ? Autolinker.link(String(feature.properties['DaysActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Length: "+ (feature.properties['LENGTHft'] !== null ? Autolinker.link(String(feature.properties['LENGTHft'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 100});
+        }
+
+        function style_Disability_Zone_2_0() {
+            return {
+                pane: 'pane_Disability_Zone_2',
+                opacity: 1,
+                color: 'rgba(19,53,202,1.0)',
+                dashArray: '',
+                lineCap: 'round',
+                lineJoin: 'bevel',
+                weight: 2.5,
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_Disability_Zone_2');
+        map.getPane('pane_Disability_Zone_2').style.zIndex = 402;
+        map.getPane('pane_Disability_Zone_2').style['mix-blend-mode'] = 'normal';
+        var layer_Disability_Zone_2 = new L.geoJson(json_Disability_Zone_2, {
+            attribution: '',
+            pane: 'pane_Disability_Zone_2',
+            onEachFeature: pop_Disability_Zone_2,
+            style: style_Disability_Zone_2_0,
+        });
+        bounds_group.addLayer(layer_Disability_Zone_2);
+        map.addLayer(layer_Disability_Zone_2);
+        function pop_Construction_Zone_3(feature, layer) {
+            var popupContent = 'Construction Zone <table>\
+                    <tr>\
+                        <td colspan="2">' + "Days Active: "+ (feature.properties['DaysActive'] !== null ? Autolinker.link(String(feature.properties['DaysActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Hours Active: "+ (feature.properties['HrsActive'] !== null ? Autolinker.link(String(feature.properties['HrsActive'])) : '') + '</td>\
+                    </tr>\
+                     <tr>\
+                        <td colspan="2">' + "Length: "+ (feature.properties['LENGTHft'] !== null ? Autolinker.link(String(feature.properties['LENGTHft'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 100});
+        }
+
+        function style_Construction_Zone_3_0() {
+            return {
+                pane: 'pane_Construction_Zone_3',
+                opacity: 1,
+                color: 'rgba(229,150,45,1.0)',
+                dashArray: '',
+                lineCap: 'round',
+                lineJoin: 'bevel',
+                weight: 2.5,
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_Construction_Zone_3');
+        map.getPane('pane_Construction_Zone_3').style.zIndex = 403;
+        map.getPane('pane_Construction_Zone_3').style['mix-blend-mode'] = 'normal';
+        var layer_Construction_Zone_3 = new L.geoJson(json_Construction_Zone_3, {
+            attribution: '',
+            pane: 'pane_Construction_Zone_3',
+            onEachFeature: pop_Construction_Zone_3,
+            style: style_Construction_Zone_3_0,
+        });
+        bounds_group.addLayer(layer_Construction_Zone_3);
+        map.addLayer(layer_Construction_Zone_3);
+        function pop_Commercial_Loading_Zone_4(feature, layer) {
+            var popupContent = 'Commercial Loading Zone <table>\
+                    <tr>\
+                        <td colspan="2">' + "Hour Limit: "+ (feature.properties['Limit'] !== null ? Autolinker.link(String(feature.properties['Limit'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Status: "+ (feature.properties['PayStatus'] !== null ? Autolinker.link(String(feature.properties['PayStatus'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Owner: "+ (feature.properties['Owner'] !== null ? Autolinker.link(String(feature.properties['Owner'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Paid: "+ (feature.properties['Amount'] !== null ? Autolinker.link(String(feature.properties['Amount'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "ID: "+ (feature.properties['UniqueID'] !== null ? Autolinker.link(String(feature.properties['UniqueID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Hours Active: "+ (feature.properties['HrsActive'] !== null ? Autolinker.link(String(feature.properties['HrsActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Days Active: "+ (feature.properties['DaysActive'] !== null ? Autolinker.link(String(feature.properties['DaysActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">'+ "Length: " + (feature.properties['LENGTHft'] !== null ? Autolinker.link(String(feature.properties['LENGTHft'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 100});
+        }
+
+        function style_Commercial_Loading_Zone_4_0() {
+            return {
+                pane: 'pane_Commercial_Loading_Zone_4',
+                opacity: 1,
+                color: 'rgba(149,254,0,1.0)',
+                dashArray: '',
+                lineCap: 'round',
+                lineJoin: 'bevel',
+                weight: 2.5,
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_Commercial_Loading_Zone_4');
+        map.getPane('pane_Commercial_Loading_Zone_4').style.zIndex = 404;
+        map.getPane('pane_Commercial_Loading_Zone_4').style['mix-blend-mode'] = 'normal';
+        var layer_Commercial_Loading_Zone_4 = new L.geoJson(json_Commercial_Loading_Zone_4, {
+            attribution: '',
+            pane: 'pane_Commercial_Loading_Zone_4',
+            onEachFeature: pop_Commercial_Loading_Zone_4,
+            style: style_Commercial_Loading_Zone_4_0,
+        });
+        bounds_group.addLayer(layer_Commercial_Loading_Zone_4);
+        map.addLayer(layer_Commercial_Loading_Zone_4);
+        function pop_Passenger_Loading_Zone_5(feature, layer) {
+            var popupContent = 'Passenger Loading Zone <table>\
+                    <tr>\
+                        <td colspan="2">' + "Status: "+ (feature.properties['PayStatus'] !== null ? Autolinker.link(String(feature.properties['PayStatus'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Owner: "+ (feature.properties['Owner'] !== null ? Autolinker.link(String(feature.properties['Owner'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Paid: "+ (feature.properties['Amount'] !== null ? Autolinker.link(String(feature.properties['Amount'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "ID: " + (feature.properties['UniqueID'] !== null ? Autolinker.link(String(feature.properties['UniqueID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Days Active: " + (feature.properties['DaysActive'] !== null ? Autolinker.link(String(feature.properties['DaysActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Hours Active: " + (feature.properties['HrsActive'] !== null ? Autolinker.link(String(feature.properties['HrsActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Length: "+ (feature.properties['LENGTHft'] !== null ? Autolinker.link(String(feature.properties['LENGTHft'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 100});
+        }
+
+        function style_Passenger_Loading_Zone_5_0() {
+            return {
+                pane: 'pane_Passenger_Loading_Zone_5',
+                opacity: 1,
+                color: 'rgba(149,132,241,1.0)',
+                dashArray: '',
+                lineCap: 'round',
+                lineJoin: 'bevel',
+                weight: 2.5,
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_Passenger_Loading_Zone_5');
+        map.getPane('pane_Passenger_Loading_Zone_5').style.zIndex = 405;
+        map.getPane('pane_Passenger_Loading_Zone_5').style['mix-blend-mode'] = 'normal';
+        var layer_Passenger_Loading_Zone_5 = new L.geoJson(json_Passenger_Loading_Zone_5, {
+            attribution: '',
+            pane: 'pane_Passenger_Loading_Zone_5',
+            onEachFeature: pop_Passenger_Loading_Zone_5,
+            style: style_Passenger_Loading_Zone_5_0,
+        });
+        bounds_group.addLayer(layer_Passenger_Loading_Zone_5);
+        map.addLayer(layer_Passenger_Loading_Zone_5);
+        function pop_Bus_Zone_6(feature, layer) {
+            var popupContent = 'Bus Zone <table>\
+                    <tr>\
+                        <td colspan="2">' + "Hours Active: "+ (feature.properties['HrsActive'] !== null ? Autolinker.link(String(feature.properties['HrsActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Days Active: "+ (feature.properties['DaysActive'] !== null ? Autolinker.link(String(feature.properties['DaysActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">'+ "Length: " + (feature.properties['LENGTHft'] !== null ? Autolinker.link(String(feature.properties['LENGTHft'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 100});
+        }
+
+        function style_Bus_Zone_6_0() {
+            return {
+                pane: 'pane_Bus_Zone_6',
+                opacity: 1,
+                color: 'rgba(247,214,80,1.0)',
+                dashArray: '',
+                lineCap: 'round',
+                lineJoin: 'bevel',
+                weight: 2.5,
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_Bus_Zone_6');
+        map.getPane('pane_Bus_Zone_6').style.zIndex = 406;
+        map.getPane('pane_Bus_Zone_6').style['mix-blend-mode'] = 'normal';
+        var layer_Bus_Zone_6 = new L.geoJson(json_Bus_Zone_6, {
+            attribution: '',
+            pane: 'pane_Bus_Zone_6',
+            onEachFeature: pop_Bus_Zone_6,
+            style: style_Bus_Zone_6_0,
+        });
+        bounds_group.addLayer(layer_Bus_Zone_6);
+        map.addLayer(layer_Bus_Zone_6);
+        function pop_No_Stopping_7(feature, layer) {
+            var popupContent = 'No Stopping <table>\
+                    <tr>\
+                        <td colspan="2">' + "Hours Active: " + (feature.properties['HrsActive'] !== null ? Autolinker.link(String(feature.properties['HrsActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Days Active: "+ (feature.properties['DaysActive'] !== null ? Autolinker.link(String(feature.properties['DaysActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Length: "+ (feature.properties['LENGTHft'] !== null ? Autolinker.link(String(feature.properties['LENGTHft'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 100});
+        }
+
+        function style_No_Stopping_7_0() {
+            return {
+                pane: 'pane_No_Stopping_7',
+                opacity: 1,
+                color: 'rgba(184,46,43,1.0)',
+                dashArray: '',
+                lineCap: 'round',
+                lineJoin: 'bevel',
+                weight: 2.5,
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_No_Stopping_7');
+        map.getPane('pane_No_Stopping_7').style.zIndex = 407;
+        map.getPane('pane_No_Stopping_7').style['mix-blend-mode'] = 'normal';
+        var layer_No_Stopping_7 = new L.geoJson(json_No_Stopping_7, {
+            attribution: '',
+            pane: 'pane_No_Stopping_7',
+            onEachFeature: pop_No_Stopping_7,
+            style: style_No_Stopping_7_0,
+        });
+        bounds_group.addLayer(layer_No_Stopping_7);
+        map.addLayer(layer_No_Stopping_7);
+        function pop_No_Parking_8(feature, layer) {
+            var popupContent = 'No Parking <table>\
+                    <tr>\
+                        <td colspan="2">' + "Days Active: "+ (feature.properties['DaysActive'] !== null ? Autolinker.link(String(feature.properties['DaysActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Hours Active: "+ (feature.properties['HrsActive'] !== null ? Autolinker.link(String(feature.properties['HrsActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Length: "+ (feature.properties['LENGTHft'] !== null ? Autolinker.link(String(feature.properties['LENGTHft'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 100});
+        }
+
+        function style_No_Parking_8_0() {
+            return {
+                pane: 'pane_No_Parking_8',
+                opacity: 1,
+                color: 'rgba(239,84,51,1.0)',
+                dashArray: '',
+                lineCap: 'round',
+                lineJoin: 'bevel',
+                weight: 2.5,
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_No_Parking_8');
+        map.getPane('pane_No_Parking_8').style.zIndex = 408;
+        map.getPane('pane_No_Parking_8').style['mix-blend-mode'] = 'normal';
+        var layer_No_Parking_8 = new L.geoJson(json_No_Parking_8, {
+            attribution: '',
+            pane: 'pane_No_Parking_8',
+            onEachFeature: pop_No_Parking_8,
+            style: style_No_Parking_8_0,
+        });
+        bounds_group.addLayer(layer_No_Parking_8);
+        map.addLayer(layer_No_Parking_8);
+
+        function pop_Free_Parking_9(feature, layer) {
+            var popupContent = 'Free Parking <table style="width: 400px">\
+                    <tr>\
+                        <td colspan="2">' + "Hour Limit: "+ (feature.properties['Limit'] !== null ? Autolinker.link(String(feature.properties['Limit'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Days Active: " + (feature.properties['DaysActive'] !== null ? Autolinker.link(String(feature.properties['DaysActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Hours Active: " + (feature.properties['HrsActive'] !== null ? Autolinker.link(String(feature.properties['HrsActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Length: " + (feature.properties['LENGTHft'] !== null ? Autolinker.link(String(feature.properties['LENGTHft'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 100, maxWidth: 1000});
+        }
+
+        function style_Free_Parking_9_0() {
+            return {
+                pane: 'pane_Free_Parking_9',
+                opacity: 1,
+                color: 'rgba(162,224,217,1.0)',
+                dashArray: '',
+                lineCap: 'round',
+                lineJoin: 'bevel',
+                weight: 2.5,
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_Free_Parking_9');
+        map.getPane('pane_Free_Parking_9').style.zIndex = 409;
+        map.getPane('pane_Free_Parking_9').style['mix-blend-mode'] = 'normal';
+        var layer_Free_Parking_9 = new L.geoJson(json_Free_Parking_9, {
+            attribution: '',
+            pane: 'pane_Free_Parking_9',
+            onEachFeature: pop_Free_Parking_9,
+            style: style_Free_Parking_9_0,
+        });
+        bounds_group.addLayer(layer_Free_Parking_9);
+        map.addLayer(layer_Free_Parking_9);
+        function pop_Meter_Parking_10(feature, layer) {
+            var popupContent = 'Meter Parking <table>\
+                    <tr>\
+                        <td colspan="2">' + "Days Active: " + (feature.properties['DaysActive'] !== null ? Autolinker.link(String(feature.properties['DaysActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Hours Active: " + (feature.properties['HrsActive'] !== null ? Autolinker.link(String(feature.properties['HrsActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Length: " + (feature.properties['LENGTHft'] !== null ? Autolinker.link(String(feature.properties['LENGTHft'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 100});
+        }
+
+        function style_Meter_Parking_10_0() {
+            return {
+                pane: 'pane_Meter_Parking_10',
+                opacity: 1,
+                color: 'rgba(53,175,163,1.0)',
+                dashArray: '',
+                lineCap: 'round',
+                lineJoin: 'bevel',
+                weight: 2.5,
+                fillOpacity: 0,
+            }
+        }
+        map.createPane('pane_Meter_Parking_10');
+        map.getPane('pane_Meter_Parking_10').style.zIndex = 410;
+        map.getPane('pane_Meter_Parking_10').style['mix-blend-mode'] = 'normal';
+        var layer_Meter_Parking_10 = new L.geoJson(json_Meter_Parking_10, {
+            attribution: '',
+            pane: 'pane_Meter_Parking_10',
+            onEachFeature: pop_Meter_Parking_10,
+            style: style_Meter_Parking_10_0,
+        });
+        bounds_group.addLayer(layer_Meter_Parking_10);
+        map.addLayer(layer_Meter_Parking_10);
+
+
+        function pop_MeterLocations_11(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + "Space ID: "+ (feature.properties['SpaceID'] !== null ? Autolinker.link(String(feature.properties['SpaceID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Terminal: "+ (feature.properties['TerminalID'] !== null ? Autolinker.link(String(feature.properties['TerminalID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Hourly Rate: $"+(feature.properties['HourlyRate'] !== null ? Autolinker.link(String(feature.properties['HourlyRate'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Hour Limit: "+(feature.properties['HourLimit'] !== null ? Autolinker.link(String(feature.properties['HourLimit'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Hours Active: "+(feature.properties['HrsActive'] !== null ? Autolinker.link(String(feature.properties['HrsActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Days Active: "+ (feature.properties['DaysActive'] !== null ? Autolinker.link(String(feature.properties['DaysActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Event Rate: "+(feature.properties['EventRate'] !== null ? Autolinker.link(String(feature.properties['EventRate'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Program Area: "+(feature.properties['ProgramAre'] !== null ? Autolinker.link(String(feature.properties['ProgramAre'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Sep. Purchase Amount: $"+(feature.properties['PurchaseAm'] !== null ? Autolinker.link(String(feature.properties['PurchaseAm'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Sep. Purchase Count: "+(feature.properties['PurchaseCo'] !== null ? Autolinker.link(String(feature.properties['PurchaseCo'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "Sep. Parking Time: "+(feature.properties['ParkingTim'] !== null ? Autolinker.link(String(feature.properties['ParkingTim'])) : '') + " hrs" + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 100});
+        }
+        function style_MeterLocations_11_0() {
+            return {
+                pane: 'pane_MeterLocations_11',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.5,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(53,175,163,1.0)',
+            }
+        }
+        map.createPane('pane_MeterLocations_11');
+        map.getPane('pane_MeterLocations_11').style.zIndex = 409;
+        map.getPane('pane_MeterLocations_11').style['mix-blend-mode'] = 'normal';
+        var layer_MeterLocations_11 = new L.geoJson(json_MeterLocations_11, {
+            attribution: '',
+            pane: 'pane_MeterLocations_11',
+            onEachFeature: pop_MeterLocations_11,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_MeterLocations_11_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_MeterLocations_11);
+
+        function pop_Public_Parking_Ramps_1(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Name'] !== null ? Autolinker.link(String(feature.properties['Name'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 100});
+        }
+
+        function style_Public_Parking_Ramps_1_0() {
+            return {
+                pane: 'pane_Public_Parking_Ramps_1',
+                stroke: true, 
+                weight: 1,
+                color: 'rgba(95,145,159,1.0)',
+                lineCap: 'round',
+                lineJoin: 'round',
+                fill: true,
+                fillOpacity: .75,
+                fillColor: 'rgba(95,145,159,1.0)',
+            }
+        }
+        map.createPane('pane_Public_Parking_Ramps_1');
+        map.getPane('pane_Public_Parking_Ramps_1').style.zIndex = 401;
+        map.getPane('pane_Public_Parking_Ramps_1').style['mix-blend-mode'] = 'normal';
+        var layer_Public_Parking_Ramps_1 = new L.geoJson(json_Public_Parking_Ramps_1, {
+            attribution: '',
+            pane: 'pane_Public_Parking_Ramps_1',
+            onEachFeature: pop_Public_Parking_Ramps_1,
+            style: style_Public_Parking_Ramps_1_0,
+        });
+        bounds_group.addLayer(layer_Public_Parking_Ramps_1);
+        //map.addLayer(layer_Public_Parking_Ramps_1);
+
+        function pop_Critical_Parking_Areas_2(feature, layer) {
+            var popupContent = 'Critical Parking Area <table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Area'] !== null ? Autolinker.link(String(feature.properties['Area'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "ID: " + (feature.properties['Id'] !== null ? Autolinker.link(String(feature.properties['Id'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 100});
+        }
+
+        function style_Critical_Parking_Areas_2_0() {
+            return {
+                pane: 'pane_Critical_Parking_Areas_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.0)',
+                dashArray: '',
+                lineCap: 'round',
+                lineJoin: 'round',
+                stroke: true, 
+                weight: .5,
+                color: 'rgba(239,84,51,1.0)',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: .25,
+                fillColor: 'rgba(239,84,51,1.0)',
+            }
+        }
+        map.createPane('pane_Critical_Parking_Areas_2');
+        map.getPane('pane_Critical_Parking_Areas_2').style.zIndex = 402;
+        map.getPane('pane_Critical_Parking_Areas_2').style['mix-blend-mode'] = 'normal';
+        var layer_Critical_Parking_Areas_2 = new L.geoJson(json_Critical_Parking_Areas_2, {
+            attribution: '',
+            pane: 'pane_Critical_Parking_Areas_2',
+            onEachFeature: pop_Critical_Parking_Areas_2,
+            style: style_Critical_Parking_Areas_2_0,
+        });
+        bounds_group.addLayer(layer_Critical_Parking_Areas_2);
+        //map.addLayer(layer_Critical_Parking_Areas_2);
+
+        function pop_NiceRideDocks_2(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['NiceRideDo'] !== null ? Autolinker.link(String(feature.properties['NiceRideDo'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Latitude'] !== null ? Autolinker.link(String(feature.properties['Latitude'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Longitude'] !== null ? Autolinker.link(String(feature.properties['Longitude'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_NiceRideDocks_2_0() {
+            return {
+                pane: 'pane_NiceRideDocks_2',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(84,176,236,1.0)',
+            }
+        }
+        map.createPane('pane_NiceRideDocks_2');
+        map.getPane('pane_NiceRideDocks_2').style.zIndex = 502;
+        map.getPane('pane_NiceRideDocks_2').style['mix-blend-mode'] = 'normal';
+        var layer_NiceRideDocks_2 = new L.geoJson(json_NiceRideDocks_2, {
+            attribution: '',
+            pane: 'pane_NiceRideDocks_2',
+            onEachFeature: pop_NiceRideDocks_2,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_NiceRideDocks_2_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_NiceRideDocks_2);
+        //map.addLayer(layer_NiceRideDocks_2);
+
+        function pop_MeterLocations_3(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SpaceID'] !== null ? Autolinker.link(String(feature.properties['SpaceID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TerminalID'] !== null ? Autolinker.link(String(feature.properties['TerminalID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Street'] !== null ? Autolinker.link(String(feature.properties['Street'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['HourlyRate'] !== null ? Autolinker.link(String(feature.properties['HourlyRate'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['HourLimit'] !== null ? Autolinker.link(String(feature.properties['HourLimit'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PMIncremen'] !== null ? Autolinker.link(String(feature.properties['PMIncremen'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['HoursEnfor'] !== null ? Autolinker.link(String(feature.properties['HoursEnfor'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['HrsActive'] !== null ? Autolinker.link(String(feature.properties['HrsActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DaysEnforc'] !== null ? Autolinker.link(String(feature.properties['DaysEnforc'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DaysActive'] !== null ? Autolinker.link(String(feature.properties['DaysActive'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Restrictio'] !== null ? Autolinker.link(String(feature.properties['Restrictio'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SplitRate'] !== null ? Autolinker.link(String(feature.properties['SplitRate'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['EventRate'] !== null ? Autolinker.link(String(feature.properties['EventRate'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['StatusJune'] !== null ? Autolinker.link(String(feature.properties['StatusJune'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Y'] !== null ? Autolinker.link(String(feature.properties['Y'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['X'] !== null ? Autolinker.link(String(feature.properties['X'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ProgramNot'] !== null ? Autolinker.link(String(feature.properties['ProgramNot'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['StatusSept'] !== null ? Autolinker.link(String(feature.properties['StatusSept'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DateAdded'] !== null ? Autolinker.link(String(feature.properties['DateAdded'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SpaceType'] !== null ? Autolinker.link(String(feature.properties['SpaceType'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ProgramAre'] !== null ? Autolinker.link(String(feature.properties['ProgramAre'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PurchaseAm'] !== null ? Autolinker.link(String(feature.properties['PurchaseAm'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PurchaseCo'] !== null ? Autolinker.link(String(feature.properties['PurchaseCo'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ParkingTim'] !== null ? Autolinker.link(String(feature.properties['ParkingTim'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ParkingT_1'] !== null ? Autolinker.link(String(feature.properties['ParkingT_1'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['AvgPurchas'] !== null ? Autolinker.link(String(feature.properties['AvgPurchas'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['AvgParking'] !== null ? Autolinker.link(String(feature.properties['AvgParking'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_MeterLocations_3_0() {
+            return {
+                pane: 'pane_MeterLocations_3',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(0,0,0,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(53,175,163,1.0)',
+            }
+        }
+        map.createPane('pane_MeterLocations_3');
+        map.getPane('pane_MeterLocations_3').style.zIndex = 503;
+        map.getPane('pane_MeterLocations_3').style['mix-blend-mode'] = 'normal';
+        var layer_MeterLocations_3 = new L.geoJson(json_MeterLocations_3, {
+            attribution: '',
+            pane: 'pane_MeterLocations_3',
+            onEachFeature: pop_MeterLocations_3,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_MeterLocations_3_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_MeterLocations_3);
+        //map.addLayer(layer_MeterLocations_3);
+
+
+        function pop_Hydrants_4(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['AncillaryR'] !== null ? Autolinker.link(String(feature.properties['AncillaryR'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Enabled'] !== null ? Autolinker.link(String(feature.properties['Enabled'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FacilityID'] !== null ? Autolinker.link(String(feature.properties['FacilityID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CreatedBy'] !== null ? Autolinker.link(String(feature.properties['CreatedBy'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CreatedDat'] !== null ? Autolinker.link(String(feature.properties['CreatedDat'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ModifiedBy'] !== null ? Autolinker.link(String(feature.properties['ModifiedBy'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ModifiedDa'] !== null ? Autolinker.link(String(feature.properties['ModifiedDa'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['InstallDat'] !== null ? Autolinker.link(String(feature.properties['InstallDat'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OwnedBy'] !== null ? Autolinker.link(String(feature.properties['OwnedBy'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SymbolRota'] !== null ? Autolinker.link(String(feature.properties['SymbolRota'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['LifeCycleS'] !== null ? Autolinker.link(String(feature.properties['LifeCycleS'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['LifeCycl_1'] !== null ? Autolinker.link(String(feature.properties['LifeCycl_1'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['AttributeV'] !== null ? Autolinker.link(String(feature.properties['AttributeV'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DrawingNum'] !== null ? Autolinker.link(String(feature.properties['DrawingNum'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SurveyElev'] !== null ? Autolinker.link(String(feature.properties['SurveyElev'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['MFGREF'] !== null ? Autolinker.link(String(feature.properties['MFGREF'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Calculated'] !== null ? Autolinker.link(String(feature.properties['Calculated'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['MeasuredSt'] !== null ? Autolinker.link(String(feature.properties['MeasuredSt'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['AvailFlowA'] !== null ? Autolinker.link(String(feature.properties['AvailFlowA'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Comments'] !== null ? Autolinker.link(String(feature.properties['Comments'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['RuleID'] !== null ? Autolinker.link(String(feature.properties['RuleID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['GlobalID'] !== null ? Autolinker.link(String(feature.properties['GlobalID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['MFGYear'] !== null ? Autolinker.link(String(feature.properties['MFGYear'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PressureCl'] !== null ? Autolinker.link(String(feature.properties['PressureCl'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Extension'] !== null ? Autolinker.link(String(feature.properties['Extension'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['RodLength'] !== null ? Autolinker.link(String(feature.properties['RodLength'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['BuryDepth'] !== null ? Autolinker.link(String(feature.properties['BuryDepth'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['NozzleCoef'] !== null ? Autolinker.link(String(feature.properties['NozzleCoef'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Category'] !== null ? Autolinker.link(String(feature.properties['Category'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SpatialVer'] !== null ? Autolinker.link(String(feature.properties['SpatialVer'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DrainsPump'] !== null ? Autolinker.link(String(feature.properties['DrainsPump'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Locked'] !== null ? Autolinker.link(String(feature.properties['Locked'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['HydrantID'] !== null ? Autolinker.link(String(feature.properties['HydrantID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['MXASSETNUM'] !== null ? Autolinker.link(String(feature.properties['MXASSETNUM'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['MXLOCATION'] !== null ? Autolinker.link(String(feature.properties['MXLOCATION'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['MXSITEID'] !== null ? Autolinker.link(String(feature.properties['MXSITEID'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CHANGEDATE'] !== null ? Autolinker.link(String(feature.properties['CHANGEDATE'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['MXCREATION'] !== null ? Autolinker.link(String(feature.properties['MXCREATION'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ROWSTAMP'] !== null ? Autolinker.link(String(feature.properties['ROWSTAMP'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Fire'] !== null ? Autolinker.link(String(feature.properties['Fire'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['HydraulicM'] !== null ? Autolinker.link(String(feature.properties['HydraulicM'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['HydUse'] !== null ? Autolinker.link(String(feature.properties['HydUse'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Standard'] !== null ? Autolinker.link(String(feature.properties['Standard'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['AssetDown'] !== null ? Autolinker.link(String(feature.properties['AssetDown'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_Hydrants_4_0() {
+            return {
+                pane: 'pane_Hydrants_4',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(239,84,51,1.0)',
+            }
+        }
+        map.createPane('pane_Hydrants_4');
+        map.getPane('pane_Hydrants_4').style.zIndex = 404;
+        map.getPane('pane_Hydrants_4').style['mix-blend-mode'] = 'normal';
+        var layer_Hydrants_4 = new L.geoJson(json_Hydrants_4, {
+            attribution: '',
+            pane: 'pane_Hydrants_4',
+            onEachFeature: pop_Hydrants_4,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_Hydrants_4_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_Hydrants_4);
+        //map.addLayer(layer_Hydrants_4);
+
+
+        function pop_TransitStops_5(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['site_id'] !== null ? Autolinker.link(String(feature.properties['site_id'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['site_on'] !== null ? Autolinker.link(String(feature.properties['site_on'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['site_at'] !== null ? Autolinker.link(String(feature.properties['site_at'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['corn_desc'] !== null ? Autolinker.link(String(feature.properties['corn_desc'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['city'] !== null ? Autolinker.link(String(feature.properties['city'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['county'] !== null ? Autolinker.link(String(feature.properties['county'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['publiccomm'] !== null ? Autolinker.link(String(feature.properties['publiccomm'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['dt_zone'] !== null ? Autolinker.link(String(feature.properties['dt_zone'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['parkride'] !== null ? Autolinker.link(String(feature.properties['parkride'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['sidewalk'] !== null ? Autolinker.link(String(feature.properties['sidewalk'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['adaaccess'] !== null ? Autolinker.link(String(feature.properties['adaaccess'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ada_comm'] !== null ? Autolinker.link(String(feature.properties['ada_comm'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['busstop_yn'] !== null ? Autolinker.link(String(feature.properties['busstop_yn'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['node_id'] !== null ? Autolinker.link(String(feature.properties['node_id'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['sign'] !== null ? Autolinker.link(String(feature.properties['sign'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['shelter'] !== null ? Autolinker.link(String(feature.properties['shelter'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['hi_freq'] !== null ? Autolinker.link(String(feature.properties['hi_freq'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['street_id'] !== null ? Autolinker.link(String(feature.properties['street_id'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['gate'] !== null ? Autolinker.link(String(feature.properties['gate'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['T_Code'] !== null ? Autolinker.link(String(feature.properties['T_Code'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_TransitStops_5_0() {
+            return {
+                pane: 'pane_TransitStops_5',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(247,214,80,1.0)',
+            }
+        }
+        map.createPane('pane_TransitStops_5');
+        map.getPane('pane_TransitStops_5').style.zIndex = 505;
+        map.getPane('pane_TransitStops_5').style['mix-blend-mode'] = 'normal';
+        var layer_TransitStops_5 = new L.geoJson(json_TransitStops_5, {
+            attribution: '',
+            pane: 'pane_TransitStops_5',
+            onEachFeature: pop_TransitStops_5,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_TransitStops_5_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_TransitStops_5);
+        //map.addLayer(layer_TransitStops_5);
+
+        function pop_BlockAnalysis_1(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + "Street: " + (feature.properties['STREET_O_N'] !== null ? Autolinker.link(String(feature.properties['STREET_O_N'])) : '') + '</td>\
+                         <tr>\
+                        <td colspan="2">' + "NP: " + (feature.properties['ft_np'] !== null ? Autolinker.link(String(feature.properties['ft_np'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "BUS: " +(feature.properties['ft_bus'] !== null ? Autolinker.link(String(feature.properties['ft_bus'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "CLZ: " +(feature.properties['ft_clz'] !== null ? Autolinker.link(String(feature.properties['ft_clz'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "DIS: " +(feature.properties['ft_dis'] !== null ? Autolinker.link(String(feature.properties['ft_dis'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "FP: " +(feature.properties['ft_fp'] !== null ? Autolinker.link(String(feature.properties['ft_fp'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "MP: " +(feature.properties['ft_mp'] !== null ? Autolinker.link(String(feature.properties['ft_mp'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "NS: " +(feature.properties['ft_ns'] !== null ? Autolinker.link(String(feature.properties['ft_ns'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "OTH: " +(feature.properties['ft_oth'] !== null ? Autolinker.link(String(feature.properties['ft_oth'])) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + "PLZ: " +(feature.properties['ft_plz'] !== null ? Autolinker.link(String(feature.properties['ft_plz'])) : '') + '</td>\
+                    </tr>\
+                </table>';
+            //layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_BlockAnalysis_1_0() {
+            return {
+                pane: 'pane_BlockAnalysis_1',
+                opacity: .1,
+                color: 'black',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 0,
+                fillColor: 'rgba(243,166,40,1.0)',
+            }
+        }
+        map.createPane('pane_BlockAnalysis_1');
+        map.getPane('pane_BlockAnalysis_1').style.zIndex = 401;
+        map.getPane('pane_BlockAnalysis_1').style['mix-blend-mode'] = 'normal';
+        var layer_BlockAnalysis_1 = new L.geoJson(json_BlockAnalysis_1, {
+            attribution: '',
+            pane: 'pane_BlockAnalysis_1',
+            onEachFeature: onEachFeature,
+            style: style_BlockAnalysis_1_0,
+        });
+        bounds_group.addLayer(layer_BlockAnalysis_1);
+        //map.addLayer(layer_BlockAnalysis_1);
+
+                function style_NonCityRoads_1_0(feature) {
+            switch(String(feature.properties['JURISDICTI'])) {
+                case 'COUNTY':
+                    return {
+                pane: 'pane_NonCityRoads_1',
+                opacity: 1,
+                color: 'rgba(95,145,159,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 3.0,
+                fillOpacity: 0,
+            }
+                    break;
+                case 'PARK BOARD':
+                    return {
+                pane: 'pane_NonCityRoads_1',
+                opacity: 1,
+                color: 'rgba(53,196,163,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 3.0,
+                fillOpacity: 0,
+            }
+                    break;
+                case 'PRIVATE':
+                    return {
+                pane: 'pane_NonCityRoads_1',
+                opacity: 1,
+                color: 'rgba(233,88,132,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 3.0,
+                fillOpacity: 0,
+            }
+                    break;
+                case 'STATE':
+                    return {
+                pane: 'pane_NonCityRoads_1',
+                opacity: 1,
+                color: 'rgba(238,171,70,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 3.0,
+                fillOpacity: 0,
+            }
+                    break;
+                case 'U OF MN':
+                    return {
+                pane: 'pane_NonCityRoads_1',
+                opacity: 1,
+                color: 'rgba(176,29,10,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 3.0,
+                fillOpacity: 0,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_NonCityRoads_1');
+        map.getPane('pane_NonCityRoads_1').style.zIndex = 401;
+        map.getPane('pane_NonCityRoads_1').style['mix-blend-mode'] = 'normal';
+        var layer_NonCityRoads_1 = new L.geoJson(json_NonCityRoads_1, {
+            attribution: '',
+            pane: 'pane_NonCityRoads_1',
+            style: style_NonCityRoads_1_0,
+        });
+        bounds_group.addLayer(layer_NonCityRoads_1);
+        //map.addLayer(layer_NonCityRoads_1);
+
+        var baseMaps = {};
+        L.control.layers(baseMaps,{'Critical Parking Areas':layer_Critical_Parking_Areas_2, 'Parking Ramps':layer_Public_Parking_Ramps_1, 'Bus Stops': layer_TransitStops_5,'Hydrants': layer_Hydrants_4,'Meter Locations': layer_MeterLocations_3,'NiceRide Docks': layer_NiceRideDocks_2, 'Road Jurisdiction': layer_NonCityRoads_1}, {position: 'bottomright', collapsed:false}).addTo(map);
+        setBounds();
+
+        buttonpress('disable-button');
+
+      $(".leaflet-control-layers-overlays").prepend("<label style='text-align: center; font-size: 13pt'>Other Layers: </label>");
+
+
+
+      var selectfeature;
+      var selected_features;  
+      var timeCounter = 0;
+      var popup = L.popup();
+      var linelengths;
+      var linesselected = new L.geoJson();
+      var ray = [];
+      var ray2 = [];
+      var count;
+      var stringy;
+      var count2;
+      var meterCount = 0;
+      var meterlength = 0;
+      var noparkinglength = 0;
+      var freeparkinglength = 0;
+      var plzlength = 0;
+      var czlength = 0;
+      var clzlength = 0;
+      var nslength = 0;
+      var otherlength = 0;
+      var dzlength = 0;
+      var bzlength = 0;
+      var totallength = 0;
+      var selectcounter =0;
+      var currentday = "";
+      var currenttime = "";
+      var current_layer_Other_1 = new L.geoJson();
+      var current_layer_Disability_Zone_2 = new L.geoJson();
+      var current_layer_Construction_Zone_3 = new L.geoJson();
+      var current_layer_Commercial_Loading_Zone_4 = new L.geoJson();
+      var current_layer_Passenger_Loading_Zone_5 = new L.geoJson();
+      var current_layer_Bus_Zone_6 = new L.geoJson();
+      var current_layer_No_Stopping_7 = new L.geoJson();
+      var current_layer_No_Parking_8 = new L.geoJson();
+      var current_layer_Free_Parking_9 = new L.geoJson();
+      var current_layer_Meter_Parking_10 = new L.geoJson();
+
+
+//From app.js selectfeature----------------------------------------------------------------------//
+    function onEachFeature(feature, layer) {
+        layer.on({
+            mouseover: highlightFeature,
+            mouseout: resetHighlight,
+            click: selectFeature
+            //dblclick : selectFeature
+        });
+    }
+    function highlightFeature(e){
+        var layer = e.target;
+        layer.setStyle(stylelayer.highlight);
+    }
+    function resetHighlight(e){    
+        var layer=e.target;
+        var feature=e.target.feature;
+        if(checkExistsLayers(feature)){
+            setStyleLayer(layer,stylelayer.highlight)
+        }else{
+            setStyleLayer(layer,stylelayer.defecto)
+        }
+    }
+
+    var selectedBlock;
+    var blockFeature;
+    function selectFeature(e){
+        var layer = e.target;
+        var feature = layer.feature;
+        setStyleLayer(layer, stylelayer.selected);
+        try{
+            map.removeLayer(selectedBlock);
+        }
+        catch(e){
+            console.log("first selection, nothing to delete");
+        }
+        //turns selected block new color
+        selectedBlock = new L.geoJson(feature, {
+            pane: 'pane_BlockAnalysis_1',
+            style: stylelayer.selected
+            });
+        map.addLayer(selectedBlock);
+        blockFeature = feature;
+    
+    }
+        var arrayBounds = [];
+    function addBounds(layer){
+        arrayBounds.push(layer.getBounds())
+    }
+    function removeBounds(layer){
+        arrayBounds = arrayBounds.filter(bounds => bounds!= layer.getBounds())
+    }
+
+       
+        var featuresSelected=[];
+    function removerlayers(feature,callback){
+        featuresSelected = featuresSelected.filter(obj => obj.SPEED_LIM!= feature.properties.SPEED_LIM)
+        callback(arguments[2],arguments[3])
+    }
+
+    function addLayers(feature,callback){
+        console.log(feature);
+        console.log(feature.properties.SPEED_LIM);
+        featuresSelected.push(feature.properties.SPEED_LIM);
+        callback(arguments[2],arguments[3])
+    }
+
+    function checkExistsLayers(feature){
+        var result=false
+        for (var i = 0; i < featuresSelected.length; i++) {
+            if(featuresSelected[i].SPEED_LIM == feature.properties.SPEED_LIM){
+                result=true;
+                break;
+            }
+        };
+        return result
+            }
+
+        function setStyleLayer(layer,styleSelected){
+        layer.setStyle(styleSelected);
+    }
+
+    var stylelayer={
+        defecto:{
+            color: "black",
+            opacity: .1,
+            fillcolor: "#00b2d6",
+            fillOpacity:0,
+            weight: 0.5
+        }
+        ,
+        reset:{
+            color: "red",
+            opacity: 0.4,
+            weight: 1
+        }
+        ,
+        highlight:{
+            weight: 5,
+            color: '#00b2d6',
+            opacity: 0.3
+        }
+        ,
+        selected:{
+            color: "#00b2d6",
+            opacity: 0.3,
+            weight: 5
+        }
+
+    }
+
+//From app.js selectfeature----------------------------------------------------------------------//
+
+
+    
+//Select button-----------------------//
+    function select() {
+      try{
+        map.removeLayer(layer_BlockAnalysis_1);
+        map.removeLayer(selectedBlock);
+      }
+      catch(e){
+        console.log("_");
+      }
+      resetTable();
+      selectfeature = map.selectAreaFeature.enable();
+      selectfeature.options.color = '#00b2d6' ;
+      selectfeature.options.weight = 1.5 ;
+      buttonpress('enable-button');
+    }
+
+    function blockSelect() {
+        try{
+            resetTable();
+            selectfeature.removeAllArea();
+            selectfeature.disable();
+        }
+        catch(e)
+        {
+            console.log("_");
+        }
+      buttonpress('block-button');
+      map.addLayer(layer_BlockAnalysis_1);
+    }
+
+
+//Delete button-----------------------//
+    function deleteSelection()
+    {
+        try{
+            map.removeLayer(selectedBlock);
+        }
+        catch(e)
+        {
+            console.log("_");
+        }
+        highlightFor('delete-button-all');
+        try{
+        selectfeature.removeAllArea();
+        }
+        catch(e)
+        {
+            console.log("_");
+        }
+        linesselected = new L.geoJson();
+        meterlength = 0;
+        noparkinglength = 0;
+        freeparkinglength = 0;
+        plzlength = 0;
+        czlength = 0;
+        clzlength = 0;
+        nslength = 0;
+        otherlength = 0;
+        dzlength = 0;
+        bzlength = 0;
+        totallength = 0;
+        ray = [];
+        
+        //displayPie(); will display empty pie chart, which looks kinda ugly
+        selectcounter = 0;
+        resetTable();
+    }
+
+    function deleteLastSelection()
+    {
+        selectfeature.removeLastArea();
+        linesselected = new L.geoJson();
+        meterlength = 0;
+        noparkinglength = 0;
+        freeparkinglength = 0;
+        plzlength = 0;
+        czlength = 0;
+        clzlength = 0;
+        nslength = 0;
+        otherlength = 0;
+        dzlength = 0;
+        bzlength = 0;
+        totallength = 0;
+        ray = [];
+        highlightFor('delete-button-all');
+        //displayPie(); will display empty pie chart, which looks kinda ugly
+        selectcounter = 0;
+    }
+
+
+//Pan button----------------------//
+    function pan() {
+      try{
+        selectfeature.disable();
+        selectfeature.removeAllArea();
+        map.removeLayer(layer_BlockAnalysis_1);
+        map.removeLayer(selectedBlock);
+      }
+      catch(e){
+        console.log("_");
+      }
+      resetTable();
+      buttonpress('disable-button');
+    }
+
+    var view = "curbView";
+//Analyze button-------------------------------------------------------//
+    function analyze() { 
+        highlightFor('get-button-features');
+        linesselected = new L.geoJson();
+        meterlength = 0;
+        noparkinglength = 0;
+        freeparkinglength = 0;
+        plzlength = 0;
+        czlength = 0;
+        clzlength = 0;
+        nslength = 0;
+        otherlength = 0;
+        dzlength = 0;
+        bzlength = 0;
+        totallength = 0;
+        meterCount = 0;
+        ray = [];
+
+    try{
+        showBlockAnalysis();
+    }
+    catch(e){
+        console.log("-");
+    }
+
+    try {
+      selected_features = selectfeature.getFeaturesSelected( 'polyline', bounds_group);
+      for(var j = 0; j< selected_features.length; j++) {
+        linesselected.addData(selected_features[j].toGeoJSON());
+        count = j;
+      }
+      console.log(linesselected.getLayers());
+      ray = linesselected.getLayers();
+    
+      for(var n = 0; n < linesselected.getLayers().length; n ++){
+        if(ray[n].feature.properties.layer == "Meter_Parking"){
+            meterlength = meterlength + Number(ray[n].feature.properties.LENGTHft);
+        }
+       else if(ray[n].feature.properties.layer == "No_Parking"){
+            noparkinglength = noparkinglength + Number(ray[n].feature.properties.LENGTHft);
+        }
+        else if(ray[n].feature.properties.layer == "Free_Parking"){
+            freeparkinglength = freeparkinglength + Number(ray[n].feature.properties.LENGTHft);
+        }
+        else if(ray[n].feature.properties.layer == "Passenger_Loading_Zone"){
+            plzlength = plzlength + Number(ray[n].feature.properties.LENGTHft);
+        }
+        else if(ray[n].feature.properties.layer == "Construction_Zone"){
+            czlength = czlength + Number(ray[n].feature.properties.LENGTHft);
+        }
+        else if(ray[n].feature.properties.layer == "No_Stopping"){
+            nslength = nslength + Number(ray[n].feature.properties.LENGTHft);
+        }
+        else if(ray[n].feature.properties.layer == "Disability_Zone"){
+            dzlength = dzlength + Number(ray[n].feature.properties.LENGTHft);
+        }
+        else if(ray[n].feature.properties.layer == "Commercial_Loading_Zone"){
+            clzlength = clzlength + Number(ray[n].feature.properties.LENGTHft);
+        }
+        else if(ray[n].feature.properties.layer == "Bus_Zone"){
+            bzlength = bzlength + Number(ray[n].feature.properties.LENGTHft);
+        }
+        else if(ray[n].feature.properties.layer == "Other"){
+            otherlength = otherlength + Number(ray[n].feature.properties.LENGTHft);
+        }
+        else
+            console.log("error");
+      }
+      totallength = meterlength + noparkinglength + freeparkinglength + plzlength + czlength + nslength + dzlength + clzlength + bzlength + otherlength;
+
+      selectcounter = 1;
+      showResults(); 
+      //displayPie();
+  }
+  catch(e)
+  {
+    console.log("-");
+  }
+
+}
+
+
+//Pan button----------------------//
+    var counter = 2;
+    $("#meter-view-button").click(function(){
+      if(counter%2 != 0){
+      document.getElementById("meter-view-button").innerHTML = "Meter View";
+      document.getElementById('table').style.visibility = "visible";
+      //document.getElementById('chartContainer').style.visibility = "visible";
+      document.getElementById('meterTable').style.visibility = "hidden";
+      view = "curbView";
+      curbView();
+    }
+      if(counter%2 == 0){
+      document.getElementById("meter-view-button").innerHTML = "Curb View";
+      document.getElementById('table').style.visibility = "hidden";
+      //document.getElementById('chartContainer').style.visibility = "hidden";
+      document.getElementById('meterTable').style.visibility = "visible";
+      view = "meterView";
+      meterView();
+    }
+      counter ++;
+    });
+
+//Remove curb layers only, not basemap or panes---------------------------------------------------------------//
+function removeAll()
+{
+    map.removeLayer(layer_Other_1);
+    map.removeLayer(layer_Disability_Zone_2);
+    map.removeLayer(layer_Construction_Zone_3);
+    map.removeLayer(layer_Commercial_Loading_Zone_4);
+    map.removeLayer(layer_Passenger_Loading_Zone_5);
+    map.removeLayer(layer_Bus_Zone_6);
+    map.removeLayer(layer_No_Stopping_7);
+    map.removeLayer(layer_No_Parking_8);
+    map.removeLayer(layer_Free_Parking_9);
+    map.removeLayer(layer_Meter_Parking_10);
+}
+
+function meterView(){
+    removeAll();
+    map.addLayer(layer_MeterLocations_11);
+}
+
+function curbView() {
+    map.removeLayer(layer_MeterLocations_11);
+    timefilter(currentday, currenttime);
+}
+
+
+//FILTER DROPDOWN FUNCTIONS-------------------------------------------------------//
+        function DayDropdown() {
+          document.getElementById("myDropdown").classList.toggle("show");
+        }
+        // Close the dropdown menu if the user clicks outside of it
+        window.onclick = function(event) {
+          if (!event.target.matches('.dropbtn')) {
+            var dropdowns = document.getElementsByClassName("dropdown-content");
+            var i;
+            for (i = 0; i < dropdowns.length; i++) {
+              var openDropdown = dropdowns[i];
+              if (openDropdown.classList.contains('show')) {
+                openDropdown.classList.remove('show');
+              }
+            }
+          }
+        }
+        function TimeDropdown() {
+          document.getElementById("myDropdown2").classList.toggle("show");
+        }
+        // Close the dropdown menu if the user clicks outside of it
+        window.onclick = function(event) {
+          if (!event.target.matches('.dropbtn')) {
+            var dropdowns = document.getElementsByClassName("dropdown-content");
+            var i;
+            for (i = 0; i < dropdowns.length; i++) {
+              var openDropdown = dropdowns[i];
+              if (openDropdown.classList.contains('show')) {
+                openDropdown.classList.remove('show');
+              }
+            }
+          }
+        }
+
+
+
+//FILTERS CURB LAYERS BY DAY------------------------------------------------------//
+        function timefilter(str1, str2) {
+           removeAll();
+           current_layer_Other_1  = new L.geoJson(json_Other_1, {
+                pane: 'pane_Oth',
+                onEachFeature: pop_Other_1,
+                style: style_Other_1_0, 
+                filter: function(feature, layer) {
+                    return ((feature.properties.DaysActive.search(str1) != -1) && (feature.properties.HrsActive.search(str2) != -1))
+                }
+            });
+            layer_Other_1 = current_layer_Other_1;
+            if(document.getElementById("otherCheckbox").checked == true)
+            layer_Other_1.addTo(map);
+
+            current_layer_Disability_Zone_2 = new L.geoJson(json_Disability_Zone_2, {
+                pane: 'pane_Disability_Zone_2',
+                onEachFeature: pop_Disability_Zone_2,
+                style: style_Disability_Zone_2_0, 
+                filter: function(feature, layer) {
+                    return ((feature.properties.DaysActive.search(str1) != -1) && (feature.properties.HrsActive.search(str2) != -1))
+                }
+            });
+            layer_Disability_Zone_2 = current_layer_Disability_Zone_2;
+            if(document.getElementById("disCheckbox").checked == true)
+            layer_Disability_Zone_2.addTo(map);
+
+            current_layer_Construction_Zone_3 = new L.geoJson(json_Construction_Zone_3, {
+                pane: 'pane_Construction_Zone_3',
+                onEachFeature: pop_Construction_Zone_3,
+                style: style_Construction_Zone_3_0, 
+                filter: function(feature, layer) {
+                    return ((feature.properties.DaysActive.search(str1) != -1) && (feature.properties.HrsActive.search(str2) != -1))
+                }
+            });
+            layer_Construction_Zone_3 = current_layer_Construction_Zone_3;
+            if(document.getElementById("conCheckbox").checked == true)
+            layer_Construction_Zone_3.addTo(map);
+
+           current_layer_Commercial_Loading_Zone_4 = new L.geoJson(json_Commercial_Loading_Zone_4, {
+                pane: 'pane_Commercial_Loading_Zone_4',
+                onEachFeature: pop_Commercial_Loading_Zone_4,
+                style: style_Commercial_Loading_Zone_4_0, 
+                filter: function(feature, layer) {
+                    return ((feature.properties.DaysActive.search(str1) != -1) && (feature.properties.HrsActive.search(str2) != -1))
+                }
+            });
+            layer_Commercial_Loading_Zone_4 = current_layer_Commercial_Loading_Zone_4;
+            if(document.getElementById("clzCheckbox").checked == true)
+            layer_Commercial_Loading_Zone_4.addTo(map);
+
+            current_layer_Passenger_Loading_Zone_5 = new L.geoJson(json_Passenger_Loading_Zone_5, {
+                pane: 'pane_Passenger_Loading_Zone_5',
+                onEachFeature: pop_Passenger_Loading_Zone_5,
+                style: style_Passenger_Loading_Zone_5_0, 
+                filter: function(feature, layer) {
+                    return ((feature.properties.DaysActive.search(str1) != -1) && (feature.properties.HrsActive.search(str2) != -1))
+                }
+            });
+            layer_Passenger_Loading_Zone_5 = current_layer_Passenger_Loading_Zone_5;
+            if(document.getElementById("plzCheckbox").checked == true)
+            layer_Passenger_Loading_Zone_5.addTo(map);
+
+            current_layer_Bus_Zone_6 = new L.geoJson(json_Bus_Zone_6, {
+                pane: 'pane_Bus_Zone_6',
+                onEachFeature: pop_Bus_Zone_6,
+                style: style_Bus_Zone_6_0, 
+                filter: function(feature, layer) {
+                    return ((feature.properties.DaysActive.search(str1) != -1) && (feature.properties.HrsActive.search(str2) != -1))
+                }
+            });
+            layer_Bus_Zone_6 = current_layer_Bus_Zone_6;
+            if(document.getElementById("busCheckbox").checked == true)
+            layer_Bus_Zone_6.addTo(map);
+
+            current_layer_No_Stopping_7 = new L.geoJson(json_No_Stopping_7, {
+                pane: 'pane_No_Stopping_7',
+                onEachFeature: pop_No_Stopping_7,
+                style: style_No_Stopping_7_0, 
+                filter: function(feature, layer) {
+                    return ((feature.properties.DaysActive.search(str1) != -1) && (feature.properties.HrsActive.search(str2) != -1))
+                }
+            });
+            layer_No_Stopping_7 = current_layer_No_Stopping_7;
+            if(document.getElementById("nsCheckbox").checked == true)
+            layer_No_Stopping_7.addTo(map);
+
+            current_layer_No_Parking_8 = new L.geoJson(json_No_Parking_8, {
+                pane: 'pane_No_Parking_8',
+                onEachFeature: pop_No_Parking_8,
+                style: style_No_Parking_8_0, 
+                filter: function(feature, layer) {
+                    return ((feature.properties.DaysActive.search(str1) != -1) && (feature.properties.HrsActive.search(str2) != -1))
+                }
+            });
+            layer_No_Parking_8 = current_layer_No_Parking_8;
+            if(document.getElementById("npCheckbox").checked == true)
+            layer_No_Parking_8.addTo(map);
+
+            current_layer_Free_Parking_9 = new L.geoJson(json_Free_Parking_9, {
+                pane: 'pane_Free_Parking_9',
+                onEachFeature: pop_Free_Parking_9,
+                style: style_Free_Parking_9_0, 
+                filter: function(feature, layer) {
+                    return ((feature.properties.DaysActive.search(str1) != -1) && (feature.properties.HrsActive.search(str2) != -1))
+                }
+            });
+            layer_Free_Parking_9 = current_layer_Free_Parking_9;
+            if(document.getElementById("freeCheckbox").checked == true)
+            layer_Free_Parking_9.addTo(map);
+
+            current_layer_Meter_Parking_10 = new L.geoJson(json_Meter_Parking_10, {
+                pane: 'pane_Meter_Parking_10',
+                onEachFeature: pop_Meter_Parking_10,
+                style: style_Meter_Parking_10_0, 
+                filter: function(feature, layer) {
+                    return ((feature.properties.DaysActive.search(str1) != -1) && (feature.properties.HrsActive.search(str2) != -1))
+                }
+            });
+            layer_Meter_Parking_10 = current_layer_Meter_Parking_10;
+            if(document.getElementById("meterCheckbox").checked == true)
+            layer_Meter_Parking_10.addTo(map);
+
+        }
+
+
+//FUNCTION TO RESET ANALYSIS TABLE---------------------------------------//
+function resetTable() {
+        document.getElementById("all").innerHTML = "";
+        document.getElementById("meter").innerHTML = "";
+        document.getElementById("np").innerHTML = "";
+        document.getElementById("fp").innerHTML = "";
+        document.getElementById("plz").innerHTML = "";
+        document.getElementById("cz").innerHTML = "";
+        document.getElementById("ns").innerHTML = "";
+        document.getElementById("dz").innerHTML = "";
+        document.getElementById("clz").innerHTML = "";
+        document.getElementById("bz").innerHTML = "";
+        document.getElementById("oth").innerHTML = "";
+
+        document.getElementById("all2").innerHTML = "";
+        document.getElementById("meter2").innerHTML = "";
+        document.getElementById("np2").innerHTML = "";
+        document.getElementById("fp2").innerHTML = "";
+        document.getElementById("plz2").innerHTML = "";
+        document.getElementById("cz2").innerHTML = "";
+        document.getElementById("ns2").innerHTML = "";
+        document.getElementById("dz2").innerHTML = "";
+        document.getElementById("clz2").innerHTML = "";
+        document.getElementById("bz2").innerHTML ="";
+        document.getElementById("oth2").innerHTML = "";
+
+    }
+
+//FUNCTION TO DISPLAY LENGTH ANALYSIS---------------------------------------//
+function showResults() {
+        document.getElementById("all").innerHTML = totallength + " ft";
+        document.getElementById("meter").innerHTML = meterlength + " ft <br>" +  (meterlength/20).toFixed(1) + " car(s)";
+        document.getElementById("np").innerHTML = noparkinglength+ " ft";
+        document.getElementById("fp").innerHTML = freeparkinglength+ " ft <br>" + (freeparkinglength/20).toFixed(1) + " car(s)";
+        document.getElementById("plz").innerHTML = plzlength+ " ft";
+        document.getElementById("cz").innerHTML = czlength+ " ft";
+        document.getElementById("ns").innerHTML = nslength+ " ft";
+        document.getElementById("dz").innerHTML = dzlength+ " ft";
+        document.getElementById("clz").innerHTML = clzlength+ " ft";
+        document.getElementById("bz").innerHTML = bzlength+ " ft"; 
+        document.getElementById("oth").innerHTML = otherlength+ " ft";
+
+        document.getElementById("all2").innerHTML = ((totallength/totallength) * 100).toFixed(1) + "%";
+        document.getElementById("meter2").innerHTML = ((meterlength/totallength) * 100).toFixed(1) + "%";
+        document.getElementById("np2").innerHTML = ((noparkinglength/totallength) * 100).toFixed(1) + "%";
+        document.getElementById("fp2").innerHTML = ((freeparkinglength/totallength) * 100).toFixed(1) + "%";
+        document.getElementById("plz2").innerHTML = ((plzlength/totallength) * 100).toFixed(1) + "%";
+        document.getElementById("cz2").innerHTML = ((czlength/totallength) * 100).toFixed(1) + "%";
+        document.getElementById("ns2").innerHTML = ((nslength/totallength) * 100).toFixed(1) + "%";
+        document.getElementById("dz2").innerHTML = ((dzlength/totallength) * 100).toFixed(1) + "%";
+        document.getElementById("clz2").innerHTML = ((clzlength/totallength) * 100).toFixed(1) + "%";
+        document.getElementById("bz2").innerHTML = ((bzlength/totallength) * 100).toFixed(1) + "%";
+        document.getElementById("oth2").innerHTML = ((otherlength/totallength) * 100).toFixed(1) + "%";
+
+    } 
+
+function showBlockAnalysis(){
+    var ft_all = 0; var ft_mp = 0; var ft_np = 0; var ft_fp= 0; var ft_plz= 0; var ft_ns = 0; var ft_dis =0; var ft_clz =0; var ft_bus=0; var ft_oth=0;
+        var block = blockFeature;
+        var all = block.properties.ft_bus + block.properties.ft_clz + block.properties.ft_dis + block.properties.ft_fp + block.properties.ft_mp + block.properties.ft_np + block.properties.ft_ns + block.properties.ft_oth + block.properties.ft_plz;
+        document.getElementById("all").innerHTML = all.toFixed(1) + " ft";
+        document.getElementById("meter").innerHTML = block.properties.ft_mp.toFixed(1) + " ft <br>" +  (block.properties.ft_mp/20).toFixed(1) + " car(s)";
+        document.getElementById("np").innerHTML = block.properties.ft_np.toFixed(1) + " ft";
+        document.getElementById("fp").innerHTML = block.properties.ft_fp + " ft <br>" + (block.properties.ft_fp/20).toFixed(1) + " car(s)";
+        document.getElementById("plz").innerHTML = block.properties.ft_plz.toFixed(1) + " ft";
+        document.getElementById("cz").innerHTML = "0 ft";
+        document.getElementById("ns").innerHTML = block.properties.ft_ns.toFixed(1) + " ft";
+        document.getElementById("dz").innerHTML = block.properties.ft_dis.toFixed(1) + " ft";
+        document.getElementById("clz").innerHTML = block.properties.ft_clz.toFixed(1)+ " ft";
+        document.getElementById("bz").innerHTML = block.properties.ft_bus.toFixed(1) + " ft"; 
+        document.getElementById("oth").innerHTML = block.properties.ft_oth.toFixed(1) + " ft";
+
+        document.getElementById("all2").innerHTML = ((all/all) * 100).toFixed(1) + "%";
+        document.getElementById("meter2").innerHTML = ((block.properties.ft_mp/all) * 100).toFixed(1) + "%";
+        document.getElementById("np2").innerHTML = ((block.properties.ft_np/all) * 100).toFixed(1) + "%";
+        document.getElementById("fp2").innerHTML = ((block.properties.ft_fp/all) * 100).toFixed(1) + "%";
+        document.getElementById("plz2").innerHTML = ((block.properties.ft_plz/all) * 100).toFixed(1) + "%";
+        document.getElementById("cz2").innerHTML = "0%";
+        document.getElementById("ns2").innerHTML = ((block.properties.ft_ns/all) * 100).toFixed(1) + "%";
+        document.getElementById("dz2").innerHTML = ((block.properties.ft_dis/all) * 100).toFixed(1) + "%";
+        document.getElementById("clz2").innerHTML = ((block.properties.ft_clz/all) * 100).toFixed(1) + "%";
+        document.getElementById("bz2").innerHTML = ((block.properties.ft_bus/all) * 100).toFixed(1) + "%";
+        document.getElementById("oth2").innerHTML = ((block.properties.ft_oth/all) * 100).toFixed(1) + "%";
+
+}
+
+
+
+//PIE CHART FUNCTIONS-------------------------------------------------------//
+        function displayPie() {
+            CanvasJS.addColorSet("curbcolors",
+                [//colorSet Array
+                "#35afa3", //mp
+                "#a2e0d9", //fp
+                "#ef5433", //np
+                "#b82e2b", //ns
+                "#f7d650", //bz
+                "#9584f1", //plz
+                "#95fe00", //clz
+                "#e5962d", //orange
+                "#1335ca", //dis
+                "#f8a8bc"  //oth           
+                ]);
+            var chart = new CanvasJS.Chart("chartContainer",
+            {
+                colorSet:  "curbcolors",
+                title:{
+                    text: ""
+                },
+                backgroundColor: "#f1f1f1",
+                data: [
+                {
+                    type: "pie",
+                    showInLegend: false,
+                    dataPoints: [
+                        { y: ((meterlength/totallength)*100), indexLabel: "MP" },
+                        { y: ((freeparkinglength/totallength)*100), indexLabel: "FP" },
+                        { y: ((noparkinglength/totallength)*100), indexLabel: "NP" },
+                        { y: ((nslength/totallength)*100), indexLabel: "NS"},
+                        { y: ((bzlength/totallength)*100), indexLabel: "BUS" },
+                        { y: ((plzlength/totallength)*100), indexLabel: "PLZ"},
+                        { y: ((clzlength/totallength)*100), indexLabel: "CLZ"},
+                        { y: ((czlength/totallength)*100), indexLabel: "CON"},
+                        { y: ((dzlength/totallength)*100), indexLabel: "DIS"},
+                        { y: ((otherlength/totallength)*100), indexLabel: "OTH"}
+                    ]
+                }
+                ]
+            });
+           
+            chart.render();
+        }
+
+
+
+
+//BUTTON STYLING FUNCTIONS-------------------------------------------------------//
+        function buttonpress(btn1) {
+        var buttonid1 = document.getElementById(btn1);
+        if(buttonid1.id == 'disable-button'){
+            document.getElementById("disable-button").style.borderBottomColor = "#00b2d6";
+            document.getElementById("enable-button").style.borderBottomColor = "white";
+            document.getElementById("block-button").style.borderBottomColor = "white";
+        }
+        if(buttonid1.id == 'enable-button'){
+            document.getElementById("enable-button").style.borderBottomColor = "#00b2d6";
+            document.getElementById("disable-button").style.borderBottomColor = "white";
+            document.getElementById("block-button").style.borderBottomColor = "white";
+        }
+        if(buttonid1.id == 'block-button'){
+            document.getElementById("block-button").style.borderBottomColor = "#00b2d6";
+            document.getElementById("enable-button").style.borderBottomColor = "white";
+            document.getElementById("disable-button").style.borderBottomColor = "white";
+        }
+    }
+
+    
+
+        function highlightFor(btn){
+        var element = document.getElementById(btn);
+        if(element.id == 'get-button-features'){
+        element.style.borderBottomColor = "#00b2d6"
+        var t = setTimeout(function(){
+           element.style.borderBottomColor = "white"
+        },(350));
+    }
+        if(element.id == 'delete-button-all'){
+        element.style.borderBottomColor = "#00b2d6"
+        var t = setTimeout(function(){
+           element.style.borderBottomColor = "white"
+        },(350));
+}
+
+    }
+
+        function AllHoursFilter(){
+            document.getElementById("dropdownTimeButton").innerHTML = "All Hours";
+            currenttime = "";
+            timefilter(currentday, currenttime);
+        }
+        function Filter1AM(){
+            document.getElementById("dropdownTimeButton").innerHTML = "1:00 AM";
+            currenttime = "01:00";
+            timefilter(currentday, currenttime);
+        }
+        function Filter2AM(){
+            document.getElementById("dropdownTimeButton").innerHTML = "2:00 AM";
+            currenttime = "02:00";
+            timefilter(currentday, currenttime);
+        }
+        function Filter3AM(){
+            document.getElementById("dropdownTimeButton").innerHTML = "3:00 AM";
+            currenttime = "03:00";
+            timefilter(currentday, currenttime);
+        }
+        function Filter4AM(){
+            document.getElementById("dropdownTimeButton").innerHTML = "4:00 AM";
+            currenttime = "04:00";
+            timefilter(currentday, currenttime);
+        }
+        function Filter5AM(){
+            document.getElementById("dropdownTimeButton").innerHTML = "5:00 AM";
+            currenttime = "05:00";
+            timefilter(currentday, currenttime);
+        }
+        function Filter6AM(){
+            document.getElementById("dropdownTimeButton").innerHTML = "6:00 AM";
+            currenttime = "06:00";
+            timefilter(currentday, currenttime);
+        }
+        function Filter7AM(){
+            document.getElementById("dropdownTimeButton").innerHTML = "7:00 AM";
+            currenttime = "07:00";
+            timefilter(currentday, currenttime);
+        }
+        function Filter8AM(){
+            document.getElementById("dropdownTimeButton").innerHTML = "8:00 AM";
+            currenttime = "08:00";
+            timefilter(currentday, currenttime);
+        }
+        function Filter9AM(){
+            document.getElementById("dropdownTimeButton").innerHTML = "9:00 AM";
+            currenttime = "09:00";
+            timefilter(currentday, currenttime);
+        }
+        function Filter10AM(){
+            document.getElementById("dropdownTimeButton").innerHTML = "10:00 AM";
+            currenttime = "10:00";
+            timefilter(currentday, currenttime);
+        }
+        function Filter11AM(){
+            document.getElementById("dropdownTimeButton").innerHTML = "11:00 AM";
+            currenttime = "11:00";
+            timefilter(currentday, currenttime);
+        }
+        function Filter12PM(){
+            document.getElementById("dropdownTimeButton").innerHTML = "12:00 PM";
+            currenttime = "12:00";
+            timefilter(currentday, currenttime);
+        }
+        function Filter1PM(){
+            document.getElementById("dropdownTimeButton").innerHTML = "1:00 PM";
+            currenttime = "13:00";
+            timefilter(currentday, currenttime);
+        }
+        function Filter2PM(){
+            document.getElementById("dropdownTimeButton").innerHTML = "2:00 PM";
+            currenttime = "14:00";
+            timefilter(currentday, currenttime);
+        }
+        function Filter3PM(){
+            document.getElementById("dropdownTimeButton").innerHTML = "3:00 PM";
+            currenttime = "15:00";
+            timefilter(currentday, currenttime);
+        }
+        function Filter4PM(){
+            document.getElementById("dropdownTimeButton").innerHTML = "4:00 PM";
+            currenttime = "16:00";
+            timefilter(currentday, currenttime);
+        }
+        function Filter5PM(){
+            document.getElementById("dropdownTimeButton").innerHTML = "5:00 PM";
+            currenttime = "17:00";
+            timefilter(currentday, currenttime);
+        }
+        function Filter6PM(){
+            document.getElementById("dropdownTimeButton").innerHTML = "6:00 PM";
+            currenttime = "18:00";
+            timefilter(currentday, currenttime);
+        }
+        function Filter7PM(){
+            document.getElementById("dropdownTimeButton").innerHTML = "7:00 PM";
+            currenttime = "19:00";
+            timefilter(currentday, currenttime);
+        }
+        function Filter8PM(){
+            document.getElementById("dropdownTimeButton").innerHTML = "8:00 PM";
+            currenttime = "20:00";
+            timefilter(currentday, currenttime);
+        }
+        function Filter9PM(){
+            document.getElementById("dropdownTimeButton").innerHTML = "9:00 PM";
+            currenttime = "21:00";
+            timefilter(currentday, currenttime);
+        }
+        function Filter10PM(){
+            document.getElementById("dropdownTimeButton").innerHTML = "10:00 PM";
+            currenttime = "22:00";
+            timefilter(currentday, currenttime);
+        }
+        function Filter11PM(){
+            document.getElementById("dropdownTimeButton").innerHTML = "11:00 PM";
+            currenttime = "23:00";
+            timefilter(currentday, currenttime);
+        }
+        function Filter12AM(){
+            document.getElementById("dropdownTimeButton").innerHTML = "12:00 AM";
+            currenttime = "00:00";
+            timefilter(currentday, currenttime);
+        }
+        function AllDaysFilter(){
+            document.getElementById("dropdownDayButton").innerHTML = "All Days";
+            currentday = "";
+            timefilter(currentday, currenttime); 
+        }
+
+        function MonFilter(){
+            document.getElementById("dropdownDayButton").innerHTML = "Monday";
+            currentday = "Mon";
+            timefilter(currentday, currenttime);
+        }
+
+        function TueFilter(){
+            document.getElementById("dropdownDayButton").innerHTML = "Tuesday";
+            currentday = "Tue";
+             timefilter(currentday, currenttime); 
+        }
+
+        function WedFilter(){
+            document.getElementById("dropdownDayButton").innerHTML = "Wednesday";
+            currentday = "Wed";
+             timefilter(currentday, currenttime); 
+        }
+
+        function ThuFilter(){
+            document.getElementById("dropdownDayButton").innerHTML = "Thursday";
+            currentday = "Thu";
+            timefilter(currentday, currenttime);
+        }
+
+        function FriFilter(){
+            document.getElementById("dropdownDayButton").innerHTML = "Friday";
+            currentday = "Fri";
+            timefilter(currentday, currenttime); 
+        }
+
+        function SatFilter(){
+            document.getElementById("dropdownDayButton").innerHTML = "Saturday";
+            currentday = "Sat";
+            timefilter(currentday, currenttime); 
+        }
+
+        function SunFilter(){
+            document.getElementById("dropdownDayButton").innerHTML = "Sunday";
+            currentday = "Sun";
+            timefilter(currentday, currenttime);
+        }
+
+        var meteredCount = 2;
+        function toggleMeter(){
+            if(meteredCount%2 ==0)
+                map.removeLayer(layer_Meter_Parking_10);
+
+            if(meteredCount%2 != 0)
+                map.addLayer(layer_Meter_Parking_10);
+
+            meteredCount++;
+        }
+
+        var freeCount = 2;
+        function toggleFree(){
+            if(freeCount%2 ==0)
+                map.removeLayer(layer_Free_Parking_9);
+
+            if(freeCount%2 != 0)
+                map.addLayer(layer_Free_Parking_9);
+
+            freeCount++;
+        }
+
+        var npCount = 2;
+        function toggleNp(){
+            if(npCount%2 ==0)
+                map.removeLayer(layer_No_Parking_8);
+
+            if(npCount%2 != 0)
+                map.addLayer(layer_No_Parking_8);
+
+            npCount++;
+        }
+
+        var nsCount = 2;
+        function toggleNs(){
+            if(nsCount%2 ==0)
+                map.removeLayer(layer_No_Stopping_7);
+
+            if(nsCount%2 != 0)
+                map.addLayer(layer_No_Stopping_7);
+
+            nsCount++;
+        }
+
+
+        var busCount = 2;
+        function toggleBus(){
+            if(busCount%2 ==0)
+                map.removeLayer(layer_Bus_Zone_6);
+
+            if(busCount%2 != 0)
+                map.addLayer(layer_Bus_Zone_6);
+
+            busCount++;
+        }
+
+
+        var plzCount = 2;
+        function togglePlz(){
+            if(plzCount%2 ==0)
+                map.removeLayer(layer_Passenger_Loading_Zone_5);
+
+            if(plzCount%2 != 0)
+                map.addLayer(layer_Passenger_Loading_Zone_5);
+
+            plzCount++;
+        }
+
+        var clzCount = 2;
+        function toggleClz(){
+            if(clzCount%2 ==0)
+                map.removeLayer(layer_Commercial_Loading_Zone_4);
+
+            if(clzCount%2 != 0)
+                map.addLayer(layer_Commercial_Loading_Zone_4);
+
+            clzCount++;
+        }
+
+        var conCount = 2;
+        function toggleCon(){
+            if(conCount%2 ==0)
+                map.removeLayer(layer_Construction_Zone_3);
+
+            if(conCount%2 != 0)
+                map.addLayer(layer_Construction_Zone_3);
+
+            conCount++;
+        }
+
+        var disCount = 2;
+        function toggleDis(){
+            if(disCount%2 ==0)
+                map.removeLayer(layer_Disability_Zone_2);
+
+            if(disCount%2 != 0)
+                map.addLayer(layer_Disability_Zone_2);
+
+            disCount++;
+        }
+
+        var otherCount = 2;
+        function toggleOther(){
+            if(otherCount%2 ==0)
+                map.removeLayer(layer_Other_1);
+
+            if(otherCount%2 != 0)
+                map.addLayer(layer_Other_1);
+
+            otherCount++;
+        }
+
+        map.on('zoomstart', function() {
+        try{
+            deleteSelection();
+            }
+            catch(e){
+                console.log("No selection to delete");
+            }
+        });
+
+
+        var shpfile = new L.Shapefile('NiceRideDocks.zip', {
+            onEachFeature: function(feature, layer) {
+                if (feature.properties) {
+                    layer.bindPopup(Object.keys(feature.properties).map(function(k) {
+                        return k + ": " + feature.properties[k];
+                    }).join("<br />"), {
+                        maxHeight: 200
+                    });
+                }
+            }
+        });
+        shpfile.addTo(map);
+        shpfile.once("data:loaded", function() {
+            console.log("finished loaded shapefile");
+        });
+    
+        
+
+
+var highlight = {
+    'color': '#333333',
+    'weight': 2,
+    'opacity': 1
+};
+
+function highlightLayer(layerID) {
+    map._layers['name'+LayerID].setStyle(highlight);
+}
+function onMapClick(e) {
+    
+}
+
+//layer_BlockAnalysis_1.on('click', highlightFeature);
+
+        
+        </script>
+</html>
+

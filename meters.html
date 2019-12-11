@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            padding: none;
+            margin: 0 auto;
+        }
+    </style>
+
+<head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.2.0/leaflet.css" />
+        <link rel="stylesheet" href="https://cdn.rawgit.com/socib/Leaflet.TimeDimension/master/dist/leaflet.timedimension.control.min.css" />
+        <link rel="stylesheet" href="css/gh-pages.css" />
+        <link rel="stylesheet" href="css/ropecss.css" />
+        <link rel="icon" href="mplslogo.png" />
+        <title>Mpls Mobility</title>
+</head>
+
+<body bgcolor= "#f9f9f9" style="height: 100%">
+	<!--Header bar-->
+   <div class="ropeHeader">
+         <h2 class="ropeIcon"  style="content:url(mplslogo.png)"></h2>
+        <h2 class="ropeTitle"><a style="font-size: 16pt; text-decoration:none; color: inherit;" href="index.html">Meters Minneapolis</a></h2>
+        <p><a href="scooters.html" style=" text-decoration:none; color: #038bc2; font-family: Arial, Verdana;  font-size: 14px;float:right; margin-top: -40px; margin-right: 25px">Scooters</a></p>
+        <p><a style="text-decoration:none; float:right; font-weight: bold; font-family: Arial, Verdana;  font-size: 14px; color:black; margin-top: -40px; margin-right: 105px" href="meters.html">Meters</a></p>
+        <p><a style="text-decoration:none; float:right; font-family: Arial, Verdana;  font-size: 14px; color: #038bc2; margin-top: -40px; margin-right: 170px; " href="curb.html">Curbs</a></p>
+        <p><a style="text-decoration:none; float:right; font-family: Arial, Verdana;  font-size: 14px; color: #038bc2; margin-top: -40px; margin-right: 235px" href="tripplanner.html">Trip Planner</a></p>
+    </div>
+    <div class="sidePanel" style="height: 100%; font-family: Arial, Verdana">
+
+        <p style= "margin-top: 45px; background-color: #DFE0E2; padding-top: 10px; padding-bottom: 10px; padding-left: 5%;color:black; font-size: 12pt; font-weight: bold; text-decoration:none; color: inherit">Hourly Occupancy Maps</p>
+
+        <p style= "margin-top: -5px; cursor: pointer; margin-left: 5%; color:black;"><a style="font-size: 10pt; text-decoration:none; color: inherit" onclick="stAnthony()">Wednesday, August 7th St. Anthony</a></p>
+    	<p style= "cursor: pointer; margin-left: 5%; color:black;"><a style="font-size: 10pt; text-decoration:none; color: inherit" onclick="aug10()">Saturday, August 10th Meter Occupancy</a></p>
+        <p style= "cursor: pointer; margin-left: 5%; color:black;"><a style="font-size: 10pt; text-decoration:none; color: inherit" onclick="sep19()">Thursday, September 19th Meter Occupancy</a></p>
+
+        <p style= "background-color: #DFE0E2; padding-top: 10px; padding-bottom: 10px; padding-left: 5%; margin-top: 5px; color:black; font-size: 12pt; font-weight: bold; text-decoration:none; color: inherit">Monthly Metric Maps</p>
+        <p style= "margin-top: -5px; cursor: pointer; margin-left: 5%; color:black;"><a style="font-size: 10pt; text-decoration:none; color: inherit" onclick="sepParkingTime()">September Parking Time (Hrs)</a></p>
+    </div>
+
+    <iframe id="iframe" style="z-index: 1000; margin-top: 0px; position: absolute; margin-left: 25%"width='75%' height='100%' src='http://cityoflakes.maps.arcgis.com/apps/TimeAware/index.html?appid=70feae9c652244989bec5973f609329e' frameborder='0' scrolling='no'></iframe>
+
+</body>
+</html>
+
+<script type="text/javascript">
+function aug10(url){
+    document.getElementById('iframe').src = 'http://cityoflakes.maps.arcgis.com/apps/TimeAware/index.html?appid=18ac5767d4e7453c93cd008efc538ca9';
+}
+
+function sep19(url){
+    document.getElementById('iframe').src = 'http://cityoflakes.maps.arcgis.com/apps/TimeAware/index.html?appid=70feae9c652244989bec5973f609329e';
+}
+
+function stAnthony(url){
+    document.getElementById('iframe').src = 'http://cityoflakes.maps.arcgis.com/apps/TimeAware/index.html?appid=9c0c3481ec8f4b6d904ffd9199b3fa4a';
+}
+
+function sepParkingTime(url){
+    document.getElementById('iframe').src = 'http://cityoflakes.maps.arcgis.com/apps/TimeAware/index.html?appid=0813aad892e24ac19a00ead1735e69f5&locale=en';
+}
+
+
+
+
+</script>
